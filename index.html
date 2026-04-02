@@ -733,17 +733,24 @@
                 
                 <div class="auth-error" id="authError"></div>
                 
-                <form id="authForm" class="auth-form" onsubmit="handleAuth(event)">
-                    <input type="email" id="authEmail" class="auth-input" placeholder="이메일" required>
-                    <input type="password" id="authPassword" class="auth-input" placeholder="비밀번호" required>
-                    <button type="submit" class="auth-button" id="authSubmitBtn">로그인</button>
+                <!-- 로그인 폼 -->
+                <form id="loginForm" class="auth-form" style="display: flex;" onsubmit="handleAuth(event)">
+                    <input type="email" id="loginEmail" class="auth-input" placeholder="이메일" required>
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="비밀번호" required>
+                    <button type="submit" class="auth-button">로그인</button>
+                </form>
+                
+                <!-- 회원가입 폼 -->
+                <form id="signupForm" class="auth-form" style="display: none;" onsubmit="handleAuth(event)">
+                    <input type="email" id="signupEmail" class="auth-input" placeholder="이메일" required>
+                    <input type="password" id="signupPassword" class="auth-input" placeholder="비밀번호 (6자 이상)" required>
+                    <input type="password" id="signupConfirm" class="auth-input" placeholder="비밀번호 확인" required>
+                    <button type="submit" class="auth-button">회원가입</button>
                 </form>
                 
                 <div class="auth-toggle">
                     <span id="authToggleText">계정이 없으신가요?</span>
-                    <button type="button" onclick="toggleAuthMode()" class="auth-toggle">
-                        <span id="authToggleBtn">회원가입</span>
-                    </button>
+                    <button type="button" id="toggleBtn" onclick="toggleAuthMode()">회원가입</button>
                 </div>
             </div>
         </div>
@@ -842,13 +849,36 @@
 
         // ===== Auth =====
         function toggleAuthMode() {
-            isSignUp = !isSignUp;
-            document.getElementById('authEmail').value = '';
-            document.getElementById('authPassword').value = '';
-            document.getElementById('authError').classList.remove('show');
-            document.getElementById('authSubmitBtn').textContent = isSignUp ? '회원가입' : '로그인';
-            document.getElementById('authToggleText').textContent = isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
-            document.getElementById('authToggleBtn').textContent = isSignUp ? '로그인' : '회원가입';
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const toggleText = document.getElementById('authToggleText');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const errorEl = document.getElementById('authError');
+            
+            errorEl.classList.remove('show');
+            
+            if (loginForm.style.display === 'flex') {
+                // 로그인 → 회원가입
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'flex';
+                toggleText.textContent = '이미 계정이 있으신가요?';
+                toggleBtn.textContent = '로그인';
+                isSignUp = true;
+            } else {
+                // 회원가입 → 로그인
+                loginForm.style.display = 'flex';
+                signupForm.style.display = 'none';
+                toggleText.textContent = '계정이 없으신가요?';
+                toggleBtn.textContent = '회원가입';
+                isSignUp = false;
+            }
+            
+            // 입력값 초기화
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupConfirm').value = '';
         }
 
         function showAuthError(message) {
@@ -859,38 +889,75 @@
 
         async function handleAuth(event) {
             event.preventDefault();
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value;
-            const btn = document.getElementById('authSubmitBtn');
+            const errorEl = document.getElementById('authError');
+            errorEl.classList.remove('show');
             
-            // 입력값 검증
-            if (!email || !password) {
-                showAuthError('이메일과 비밀번호를 입력해주세요.');
-                return;
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const isLoginMode = loginForm.style.display === 'flex';
+            
+            let email, password, passwordConfirm;
+            let submitBtn;
+            
+            if (isLoginMode) {
+                // 로그인
+                email = document.getElementById('loginEmail').value.trim();
+                password = document.getElementById('loginPassword').value;
+                submitBtn = loginForm.querySelector('button[type="submit"]');
+                
+                if (!email || !password) {
+                    showAuthError('이메일과 비밀번호를 입력해주세요.');
+                    return;
+                }
+            } else {
+                // 회원가입
+                email = document.getElementById('signupEmail').value.trim();
+                password = document.getElementById('signupPassword').value;
+                passwordConfirm = document.getElementById('signupConfirm').value;
+                submitBtn = signupForm.querySelector('button[type="submit"]');
+                
+                if (!email || !password || !passwordConfirm) {
+                    showAuthError('모든 필드를 입력해주세요.');
+                    return;
+                }
+                
+                if (!email.includes('@')) {
+                    showAuthError('올바른 이메일 형식을 입력해주세요.');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showAuthError('비밀번호는 6자 이상이어야 합니다.');
+                    return;
+                }
+                
+                if (password !== passwordConfirm) {
+                    showAuthError('비밀번호가 일치하지 않습니다.');
+                    return;
+                }
             }
             
-            if (!email.includes('@')) {
-                showAuthError('올바른 이메일 형식을 입력해주세요.');
-                return;
-            }
-            
-            btn.disabled = true;
-            document.getElementById('authError').classList.remove('show');
+            submitBtn.disabled = true;
+            submitBtn.textContent = isLoginMode ? '로그인 중...' : '회원가입 중...';
 
             try {
-                if (isSignUp) {
-                    if (password.length < 6) {
-                        showAuthError('비밀번호는 6자 이상이어야 합니다.');
-                        btn.disabled = false;
-                        return;
-                    }
-                    await auth.createUserWithEmailAndPassword(email, password);
-                } else {
+                if (isLoginMode) {
+                    // 로그인
                     await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    // 회원가입
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    // 회원가입 후 사용자 데이터 초기화
+                    await db.collection('users').doc(auth.currentUser.uid).set({
+                        email: email,
+                        wardrobe: {},
+                        outfits: {},
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 }
             } catch (error) {
-                let message = '오류가 발생했습니다.';
                 console.error('Auth error:', error.code, error.message);
+                let message = '오류가 발생했습니다.';
                 
                 if (error.code === 'auth/email-already-in-use') {
                     message = '이미 사용 중인 이메일입니다.';
@@ -906,11 +973,14 @@
                     message = '이 작업은 현재 사용할 수 없습니다.';
                 } else if (error.code === 'auth/too-many-requests') {
                     message = '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = '네트워크 연결을 확인해주세요.';
                 }
                 
                 showAuthError(message);
             } finally {
-                btn.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = isLoginMode ? '로그인' : '회원가입';
             }
         }
 
