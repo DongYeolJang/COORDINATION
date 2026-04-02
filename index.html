@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="My Wardrobe">
+    <title>My Wardrobe - AI Outfit Coordinator</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Georgia', serif;
+            background: #0a0a0a;
+            color: #f5f0e8;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            position: fixed;
+            overflow: hidden;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 2px;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Auth Screen */
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .auth-screen.hidden {
+            display: none;
+        }
+        
+        .auth-container {
+            width: 90%;
+            max-width: 360px;
+            padding: 32px;
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+        }
+        
+        .auth-header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        
+        .auth-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+        
+        .auth-header p {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: #555;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #151515;
+            border: 1px solid #222;
+            border-radius: 2px;
+            color: #f5f0e8;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: #c9a96e;
+            background: #1a1a1a;
+        }
+        
+        .auth-input::placeholder {
+            color: #444;
+        }
+        
+        .auth-button {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #c9a96e, #a8864a);
+            color: #0a0a0a;
+            border: none;
+            border-radius: 2px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        
+        .auth-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
+        }
+        
+        .auth-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            color: #555;
+            letter-spacing: 0.1em;
+        }
+        
+        .auth-toggle button {
+            background: none;
+            border: none;
+            color: #c9a96e;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            text-decoration: underline;
+            margin-left: 4px;
+        }
+        
+        .auth-error {
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 2px solid #ef4444;
+            border-radius: 0 2px 2px 0;
+            color: #fca5a5;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        
+        .auth-error.show {
+            display: block;
+        }
+        
+        /* Main App */
+        .header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #222;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        
+        .header-left {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .header-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.4em;
+            color: #c9a96e;
+            margin-bottom: 2px;
+        }
+        
+        .header-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 300;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .header-center {
+            display: flex;
+            gap: 2px;
+            background: #111;
+            border-radius: 2px;
+            padding: 3px;
+            flex-shrink: 0;
+        }
+        
+        .tab-btn {
+            padding: 8px 14px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: #666;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s;
+            font-weight: 300;
+        }
+        
+        .tab-btn.active {
+            background: #c9a96e;
+            color: #0a0a0a;
+            font-weight: 500;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .item-count {
+            text-align: right;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+        
+        .item-count-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            color: #444;
+            letter-spacing: 0.15em;
+        }
+        
+        .item-count-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+            color: #c9a96e;
+        }
+        
+        .logout-btn {
+            padding: 6px 10px;
+            background: #1a1a1a;
+            border: 1px solid #222;
+            border-radius: 2px;
+            color: #c9a96e;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .logout-btn:active {
+            background: #222;
+            border-color: #c9a96e;
+        }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Wardrobe Tab */
+        .wardrobe-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .category-tabs::-webkit-scrollbar {
+            height: 3px;
+        }
+        
+        .category-btn {
+            padding: 8px 12px;
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 2px;
+            color: #666;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .category-btn.active {
+            background: #151515;
+            border-color: #c9a96e;
+            color: #c9a96e;
+        }
+        
+        .upload-zone {
+            border: 1px dashed #2a2a2a;
+            border-radius: 2px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: transparent;
+        }
+        
+        .upload-zone:active {
+            border-color: #c9a96e;
+            background: rgba(201, 169, 110, 0.05);
+        }
+        
+        .upload-plus {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .upload-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.25em;
+            color: #555;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+        }
+        
+        .item-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 2px;
+            background: #111;
+            aspect-ratio: 3/4;
+        }
+        
+        .item-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .item-delete {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .item-card:active .item-delete {
+            opacity: 1;
+            display: flex;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #333;
+        }
+        
+        .empty-state-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: #444;
+        }
+        
+        /* Outfit Tab */
+        .season-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .season-btn {
+            padding: 14px 12px;
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 2px;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .season-btn.active {
+            background: #151515;
+            border-color: currentColor;
+        }
+        
+        .season-emoji {
+            font-size: 20px;
+        }
+        
+        .season-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            font-weight: 300;
+        }
+        
+        .season-en {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.25em;
+            opacity: 0.5;
+        }
+        
+        .ai-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #c9a96e, #a8864a);
+            color: #0a0a0a;
+            border: none;
+            border-radius: 2px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+        
+        .ai-button:active:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .ai-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .outfit-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .outfit-card {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 2px;
+            overflow: hidden;
+            animation: slideUp 0.4s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .outfit-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .outfit-header-left {
+            flex: 1;
+        }
+        
+        .outfit-look {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.3em;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        
+        .outfit-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+            font-weight: 400;
+        }
+        
+        .outfit-style {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            padding: 4px 8px;
+            border: 1px solid #333;
+            border-radius: 2px;
+            color: #888;
+            white-space: nowrap;
+        }
+        
+        .outfit-body {
+            padding: 16px;
+        }
+        
+        .outfit-description {
+            font-family: 'Georgia', serif;
+            font-size: 12px;
+            color: #888;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        
+        .outfit-items {
+            margin-bottom: 16px;
+        }
+        
+        .outfit-items-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.2em;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        .outfit-item-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .outfit-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #151515;
+            border-radius: 2px;
+            padding: 6px 10px;
+            border: 1px solid #1e1e1e;
+            font-size: 9px;
+        }
+        
+        .outfit-item-img {
+            width: 24px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        
+        .outfit-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .outfit-item-cat {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 7px;
+            letter-spacing: 0.15em;
+            color: #666;
+        }
+        
+        .outfit-item-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            color: #bbb;
+        }
+        
+        .outfit-tip {
+            padding: 10px 12px;
+            background: rgba(201, 169, 110, 0.05);
+            border-left: 2px solid #c9a96e;
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .outfit-tip-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.2em;
+            color: #c9a96e;
+            margin-bottom: 4px;
+        }
+        
+        .outfit-tip-text {
+            font-family: 'Georgia', serif;
+            font-size: 11px;
+            color: #888;
+            line-height: 1.5;
+        }
+        
+        .outfit-empty {
+            text-align: center;
+            padding: 60px 0;
+            color: #2a2a2a;
+        }
+        
+        .outfit-empty-emoji {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        
+        .outfit-empty-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 300;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        
+        .outfit-empty-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: #333;
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 16px;
+            }
+            
+            .content {
+                padding: 16px;
+            }
+            
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="auth-screen">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>MY WARDROBE</h1>
+                    <p>AI OUTFIT COORDINATOR</p>
+                </div>
+                
+                <div class="auth-error" id="authError"></div>
+                
+                <form id="authForm" class="auth-form" onsubmit="handleAuth(event)">
+                    <input type="email" id="authEmail" class="auth-input" placeholder="이메일" required>
+                    <input type="password" id="authPassword" class="auth-input" placeholder="비밀번호" required>
+                    <button type="submit" class="auth-button" id="authSubmitBtn">로그인</button>
+                </form>
+                
+                <div class="auth-toggle">
+                    <span id="authToggleText">계정이 없으신가요?</span>
+                    <button type="button" onclick="toggleAuthMode()" class="auth-toggle">
+                        <span id="authToggleBtn">회원가입</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main App -->
+        <header class="header">
+            <div class="header-left">
+                <div class="header-title">WELCOME</div>
+                <div class="header-name" id="userName">계정 로딩중...</div>
+            </div>
+            
+            <div class="header-center">
+                <button class="tab-btn active" onclick="switchTab('wardrobe')">CLOSET</button>
+                <button class="tab-btn" onclick="switchTab('outfit')">OUTFIT</button>
+            </div>
+            
+            <div class="header-right">
+                <div class="item-count" id="itemCount">
+                    <div class="item-count-label">ITEMS</div>
+                    <div class="item-count-value">0</div>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">LOGOUT</button>
+            </div>
+        </header>
+        
+        <div class="content" id="content">
+            <!-- Wardrobe Tab -->
+            <div id="wardrobeTab" class="wardrobe-container">
+                <div class="category-tabs" id="categoryTabs"></div>
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-plus">+</div>
+                    <div class="upload-text">DRAG & DROP OR CLICK</div>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*">
+                <div class="items-grid" id="itemsGrid"></div>
+            </div>
+            
+            <!-- Outfit Tab -->
+            <div id="outfitTab" class="wardrobe-container" style="display: none;">
+                <div class="season-selector" id="seasonSelector"></div>
+                <button class="ai-button" id="aiButton" onclick="generateOutfits()">✦ AI 코디 추천받기</button>
+                <div class="outfit-cards" id="outfitCards"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Firebase Config =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyDICYEYuHrAFJr3mPTPJEKucFYGK3b4mz4",
+            authDomain: "asset-portfolio-2b333.firebaseapp.com",
+            projectId: "asset-portfolio-2b333",
+            storageBucket: "asset-portfolio-2b333.firebasestorage.app",
+            messagingSenderId: "226934059043",
+            appId: "1:226934059043:web:16d9cf3061077bf19d8196",
+            measurementId: "G-684J093XV4"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // ===== State =====
+        let currentUser = null;
+        let currentTab = 'wardrobe';
+        let currentCategory = 'TOPS';
+        let currentSeason = 'spring';
+        let wardrobe = {};
+        let outfits = {};
+        let isSignUp = false;
+
+        const CATEGORIES = [
+            { id: 'TOPS', label: 'TOPS', icon: '👔' },
+            { id: 'T-SHIRTS', label: 'T-SHIRTS', icon: '👕' },
+            { id: 'PANTS', label: 'PANTS', icon: '👖' },
+            { id: 'OUTER', label: 'OUTER', icon: '🧥' },
+            { id: 'HEAVY OUTER', label: 'HEAVY OUTER', icon: '🧣' },
+            { id: 'SHOES', label: 'SHOES', icon: '👟' },
+            { id: 'BAG', label: 'BAG', icon: '👜' },
+            { id: 'ACCESSORY', label: 'ACCESSORY', icon: '💍' }
+        ];
+
+        const SEASONS = [
+            { id: 'spring', label: '봄', en: 'SPRING', color: '#f9a8d4', emoji: '🌸' },
+            { id: 'summer', label: '여름', en: 'SUMMER', color: '#34d399', emoji: '☀️' },
+            { id: 'fall', label: '가을', en: 'FALL', color: '#fb923c', emoji: '🍂' },
+            { id: 'winter', label: '겨울', en: 'WINTER', color: '#60a5fa', emoji: '❄️' }
+        ];
+
+        // ===== Auth =====
+        function toggleAuthMode() {
+            isSignUp = !isSignUp;
+            document.getElementById('authSubmitBtn').textContent = isSignUp ? '회원가입' : '로그인';
+            document.getElementById('authToggleText').textContent = isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
+            document.getElementById('authToggleBtn').textContent = isSignUp ? '로그인' : '회원가입';
+            document.getElementById('authError').classList.remove('show');
+        }
+
+        function showAuthError(message) {
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        async function handleAuth(event) {
+            event.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const btn = document.getElementById('authSubmitBtn');
+            
+            btn.disabled = true;
+
+            try {
+                if (isSignUp) {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+            } catch (error) {
+                let message = '오류가 발생했습니다.';
+                if (error.code === 'auth/email-already-in-use') message = '이미 사용 중인 이메일입니다.';
+                if (error.code === 'auth/weak-password') message = '비밀번호는 6자 이상이어야 합니다.';
+                if (error.code === 'auth/user-not-found') message = '계정을 찾을 수 없습니다.';
+                if (error.code === 'auth/wrong-password') message = '비밀번호가 틀렸습니다.';
+                showAuthError(message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleLogout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                await auth.signOut();
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('userName').textContent = user.email.split('@')[0];
+                
+                await loadUserData();
+                renderCategoryTabs();
+                renderSeasonSelector();
+                updateItemCount();
+            } else {
+                currentUser = null;
+                document.getElementById('authScreen').classList.remove('hidden');
+                wardrobe = {};
+                outfits = {};
+            }
+        });
+
+        // ===== Data Management =====
+        async function loadUserData() {
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    wardrobe = data.wardrobe || {};
+                    outfits = data.outfits || {};
+                }
+                renderItemsGrid();
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+            }
+        }
+
+        async function saveUserData() {
+            if (!currentUser) return;
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    wardrobe,
+                    outfits,
+                    updatedAt: new Date()
+                }, { merge: true });
+            } catch (error) {
+                console.error('데이터 저장 실패:', error);
+            }
+        }
+
+        // ===== File Upload =====
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+        document.getElementById('uploadZone').addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.getElementById('uploadZone').style.borderColor = '#c9a96e';
+            document.getElementById('uploadZone').style.background = 'rgba(201, 169, 110, 0.05)';
+        });
+        document.getElementById('uploadZone').addEventListener('dragleave', () => {
+            document.getElementById('uploadZone').style.borderColor = '#2a2a2a';
+            document.getElementById('uploadZone').style.background = 'transparent';
+        });
+        document.getElementById('uploadZone').addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.getElementById('uploadZone').style.borderColor = '#2a2a2a';
+            document.getElementById('uploadZone').style.background = 'transparent';
+            handleFileUpload({ target: { files: e.dataTransfer.files } });
+        });
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const itemId = Date.now() + Math.random();
+                    const item = {
+                        id: itemId,
+                        name: file.name.replace(/\.[^.]+$/, ''),
+                        category: currentCategory,
+                        image: e.target.result
+                    };
+
+                    if (!wardrobe[currentCategory]) {
+                        wardrobe[currentCategory] = [];
+                    }
+                    wardrobe[currentCategory].push(item);
+                    renderItemsGrid();
+                    updateItemCount();
+                    saveUserData();
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        function removeItem(category, itemId) {
+            if (!wardrobe[category]) return;
+            wardrobe[category] = wardrobe[category].filter(i => i.id !== itemId);
+            renderItemsGrid();
+            updateItemCount();
+            saveUserData();
+        }
+
+        // ===== UI Rendering =====
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('wardrobeTab').style.display = tab === 'wardrobe' ? 'flex' : 'none';
+            document.getElementById('outfitTab').style.display = tab === 'outfit' ? 'flex' : 'none';
+            
+            if (tab === 'outfit') {
+                renderOutfitCards();
+            }
+        }
+
+        function renderCategoryTabs() {
+            const container = document.getElementById('categoryTabs');
+            container.innerHTML = CATEGORIES.map(cat => {
+                const count = wardrobe[cat.id]?.length || 0;
+                return `
+                    <button class="category-btn ${cat.id === currentCategory ? 'active' : ''}" onclick="selectCategory('${cat.id}')">
+                        <span>${cat.icon}</span>
+                        <span>${cat.label}</span>
+                        ${count > 0 ? `<span style="font-size: 8px; opacity: 0.6;">(${count})</span>` : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectCategory(catId) {
+            currentCategory = catId;
+            renderCategoryTabs();
+            renderItemsGrid();
+        }
+
+        function renderItemsGrid() {
+            const items = wardrobe[currentCategory] || [];
+            const grid = document.getElementById('itemsGrid');
+            
+            if (items.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1;">
+                        <div class="empty-state">
+                            <div class="empty-state-title">빈 카테고리</div>
+                            <div class="empty-state-text">위에서 아이템을 추가하세요</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = items.map(item => `
+                <div class="item-card">
+                    <img src="${item.image}" alt="${item.name}" class="item-image">
+                    <button class="item-delete" onclick="removeItem('${currentCategory}', ${item.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function updateItemCount() {
+            const total = Object.values(wardrobe).reduce((sum, items) => sum + (items?.length || 0), 0);
+            document.querySelector('.item-count-value').textContent = total;
+        }
+
+        function renderSeasonSelector() {
+            const container = document.getElementById('seasonSelector');
+            container.innerHTML = SEASONS.map(season => `
+                <button class="season-btn ${season.id === currentSeason ? 'active' : ''}" onclick="selectSeason('${season.id}')" style="${season.id === currentSeason ? `color: ${season.color};` : ''}">
+                    <div class="season-emoji">${season.emoji}</div>
+                    <div class="season-name">${season.label}</div>
+                    <div class="season-en">${season.en}</div>
+                </button>
+            `).join('');
+        }
+
+        function selectSeason(seasonId) {
+            currentSeason = seasonId;
+            renderSeasonSelector();
+            renderOutfitCards();
+        }
+
+        function renderOutfitCards() {
+            const cards = outfits[currentSeason] || [];
+            const container = document.getElementById('outfitCards');
+            const season = SEASONS.find(s => s.id === currentSeason);
+            
+            if (cards.length === 0) {
+                container.innerHTML = `
+                    <div class="outfit-empty">
+                        <div class="outfit-empty-emoji">${season.emoji}</div>
+                        <div class="outfit-empty-title">아직 코디가 없어요</div>
+                        <div class="outfit-empty-text">위 버튼을 눌러 ${season.label} 코디를 생성하세요</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cards.map((outfit, i) => {
+                const itemsHtml = outfit.items.map((itemStr, j) => {
+                    const [cat, ...nameParts] = itemStr.split(':');
+                    const name = nameParts.join(':').trim();
+                    const found = Object.values(wardrobe).flat().find(wi => wi.name === name || wi.category === cat.trim());
+                    return `
+                        <div class="outfit-item">
+                            ${found ? `<img src="${found.image}" alt="" class="outfit-item-img">` : ''}
+                            <div class="outfit-item-info">
+                                <div class="outfit-item-cat">${cat.trim()}</div>
+                                <div class="outfit-item-name">${name || cat.trim()}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="outfit-card">
+                        <div class="outfit-header" style="background: ${season.color}15; border-bottom-color: ${season.color}22;">
+                            <div class="outfit-header-left">
+                                <div class="outfit-look" style="color: ${season.color};">LOOK ${String(i + 1).padStart(2, '0')}</div>
+                                <div class="outfit-title">${outfit.title}</div>
+                            </div>
+                            <div class="outfit-style" style="border-color: ${season.color}44; color: ${season.color};">${outfit.style}</div>
+                        </div>
+                        <div class="outfit-body">
+                            <div class="outfit-description">${outfit.description}</div>
+                            <div class="outfit-items">
+                                <div class="outfit-items-label">ITEMS</div>
+                                <div class="outfit-item-list">${itemsHtml}</div>
+                            </div>
+                            <div class="outfit-tip" style="border-left-color: ${season.color}; background: ${season.color}08;">
+                                <div class="outfit-tip-label" style="color: ${season.color};">STYLING TIP</div>
+                                <div class="outfit-tip-text">${outfit.tip}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== AI Outfit Generation =====
+        async function generateOutfits() {
+            const btn = document.getElementById('aiButton');
+            const allItems = Object.entries(wardrobe).flatMap(([cat, items]) =>
+                (items || []).map(item => ({ category: cat, name: item.name }))
+            );
+
+            if (allItems.length < 2) {
+                alert('옷장에 아이템을 2개 이상 추가해주세요!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="pulse">✦ AI 코디 생성 중...</span>';
+
+            try {
+                const seasonInfo = SEASONS.find(s => s.id === currentSeason);
+                const prompt = `당신은 한국의 패션 스타일리스트입니다. 아래 옷장 아이템 목록을 보고 ${seasonInfo.label} 시즌에 어울리는 코디를 추천해주세요.
+
+옷장 아이템:
+${allItems.map(i => `- [${i.category}] ${i.name}`).join('\n')}
+
+다음 JSON 형식으로만 응답하세요 (마크다운 없이):
+{
+  "outfits": [
+    {
+      "title": "코디 이름",
+      "style": "스타일 키워드",
+      "items": ["카테고리:아이템명"],
+      "description": "설명",
+      "tip": "팁"
+    }
+  ]
+}
+
+${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코디를 추천해주세요.`;
+
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1000,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.map(c => c.text || '').join('');
+                const clean = text.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(clean);
+
+                outfits[currentSeason] = parsed.outfits;
+                renderOutfitCards();
+                saveUserData();
+            } catch (error) {
+                console.error('AI 오류:', error);
+                alert('AI 추천 중 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `✦ ${SEASONS.find(s => s.id === currentSeason).label} 코디 AI 추천받기`;
+            }
+        }
+
+        // ===== Init =====
+        renderCategoryTabs();
+        renderSeasonSelector();
+    </script>
+</body>
+</html>
