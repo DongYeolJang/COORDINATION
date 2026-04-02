@@ -793,19 +793,25 @@
     <script>
         // ===== Firebase Config =====
         const firebaseConfig = {
-            apiKey: "AIzaSyDICYEYuHrAFJr3mPTPJEKucFYGK3b4mz4",
-            authDomain: "asset-portfolio-2b333.firebaseapp.com",
-            projectId: "asset-portfolio-2b333",
-            storageBucket: "asset-portfolio-2b333.firebasestorage.app",
-            messagingSenderId: "226934059043",
-            appId: "1:226934059043:web:16d9cf3061077bf19d8196",
-            measurementId: "G-684J093XV4"
+            apiKey: "AIzaSyAh2GUyt2NDSo-dlbltr45lHzF-RPyGUBQ",
+            authDomain: "coordination-41404.firebaseapp.com",
+            projectId: "coordination-41404",
+            storageBucket: "coordination-41404.firebasestorage.app",
+            messagingSenderId: "606272143017",
+            appId: "1:606272143017:web:97450495f469c28e69b3b8",
+            measurementId: "G-M3MNF8CWSY"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
+
+        // Firebase 초기화 확인
+        console.log('Firebase initialized:', {
+            projectId: firebaseConfig.projectId,
+            authDomain: firebaseConfig.authDomain
+        });
 
         // ===== State =====
         let currentUser = null;
@@ -837,10 +843,12 @@
         // ===== Auth =====
         function toggleAuthMode() {
             isSignUp = !isSignUp;
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authError').classList.remove('show');
             document.getElementById('authSubmitBtn').textContent = isSignUp ? '회원가입' : '로그인';
             document.getElementById('authToggleText').textContent = isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
             document.getElementById('authToggleBtn').textContent = isSignUp ? '로그인' : '회원가입';
-            document.getElementById('authError').classList.remove('show');
         }
 
         function showAuthError(message) {
@@ -851,24 +859,55 @@
 
         async function handleAuth(event) {
             event.preventDefault();
-            const email = document.getElementById('authEmail').value;
+            const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
             const btn = document.getElementById('authSubmitBtn');
             
+            // 입력값 검증
+            if (!email || !password) {
+                showAuthError('이메일과 비밀번호를 입력해주세요.');
+                return;
+            }
+            
+            if (!email.includes('@')) {
+                showAuthError('올바른 이메일 형식을 입력해주세요.');
+                return;
+            }
+            
             btn.disabled = true;
+            document.getElementById('authError').classList.remove('show');
 
             try {
                 if (isSignUp) {
+                    if (password.length < 6) {
+                        showAuthError('비밀번호는 6자 이상이어야 합니다.');
+                        btn.disabled = false;
+                        return;
+                    }
                     await auth.createUserWithEmailAndPassword(email, password);
                 } else {
                     await auth.signInWithEmailAndPassword(email, password);
                 }
             } catch (error) {
                 let message = '오류가 발생했습니다.';
-                if (error.code === 'auth/email-already-in-use') message = '이미 사용 중인 이메일입니다.';
-                if (error.code === 'auth/weak-password') message = '비밀번호는 6자 이상이어야 합니다.';
-                if (error.code === 'auth/user-not-found') message = '계정을 찾을 수 없습니다.';
-                if (error.code === 'auth/wrong-password') message = '비밀번호가 틀렸습니다.';
+                console.error('Auth error:', error.code, error.message);
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    message = '이미 사용 중인 이메일입니다.';
+                } else if (error.code === 'auth/weak-password') {
+                    message = '비밀번호는 6자 이상이어야 합니다.';
+                } else if (error.code === 'auth/user-not-found') {
+                    message = '계정을 찾을 수 없습니다. 회원가입을 시도해주세요.';
+                } else if (error.code === 'auth/wrong-password') {
+                    message = '비밀번호가 틀렸습니다.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = '올바른 이메일 형식이 아닙니다.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = '이 작업은 현재 사용할 수 없습니다.';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+                }
+                
                 showAuthError(message);
             } finally {
                 btn.disabled = false;
@@ -920,10 +959,12 @@
                 await db.collection('users').doc(currentUser.uid).set({
                     wardrobe,
                     outfits,
-                    updatedAt: new Date()
+                    email: currentUser.email,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             } catch (error) {
                 console.error('데이터 저장 실패:', error);
+                // 조용히 실패 (사용자에게 에러 표시 안함)
             }
         }
 
