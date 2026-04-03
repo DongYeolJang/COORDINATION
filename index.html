@@ -809,7 +809,11 @@
             measurementId: "G-M3MNF8CWSY"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        // Firebase 앱 초기화
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
         const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
@@ -817,8 +821,24 @@
         // Firebase 초기화 확인
         console.log('Firebase initialized:', {
             projectId: firebaseConfig.projectId,
-            authDomain: firebaseConfig.authDomain
+            authDomain: firebaseConfig.authDomain,
+            app: firebase.app().name
         });
+        
+        console.log(`
+        ⚠️ Firebase Firestore Rules 설정 필요:
+        
+        Firebase Console → Firestore Database → Rules에서 다음을 설정하세요:
+        
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /users/{uid} {
+              allow read, write: if request.auth.uid == uid;
+            }
+          }
+        }
+        `);
 
         // ===== State =====
         let currentUser = null;
@@ -946,14 +966,24 @@
                     await auth.signInWithEmailAndPassword(email, password);
                 } else {
                     // 회원가입
-                    await auth.createUserWithEmailAndPassword(email, password);
-                    // 회원가입 후 사용자 데이터 초기화
-                    await db.collection('users').doc(auth.currentUser.uid).set({
-                        email: email,
-                        wardrobe: {},
-                        outfits: {},
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const uid = userCredential.user.uid;
+                    
+                    // Firestore에 사용자 데이터 저장 (약간의 지연으로 auth 완전 동기화 대기)
+                    setTimeout(async () => {
+                        try {
+                            await db.collection('users').doc(uid).set({
+                                email: email,
+                                wardrobe: {},
+                                outfits: {},
+                                createdAt: new Date().toISOString()
+                            });
+                            console.log('User data saved successfully');
+                        } catch (dbError) {
+                            console.error('Firestore 저장 실패:', dbError);
+                            // Firestore 저장 실패해도 auth는 성공했으므로 로그인 진행
+                        }
+                    }, 500);
                 }
             } catch (error) {
                 console.error('Auth error:', error.code, error.message);
@@ -990,22 +1020,25 @@
             }
         }
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('userName').textContent = user.email.split('@')[0];
-                
-                await loadUserData();
-                renderCategoryTabs();
-                renderSeasonSelector();
-                updateItemCount();
-            } else {
-                currentUser = null;
-                document.getElementById('authScreen').classList.remove('hidden');
-                wardrobe = {};
-                outfits = {};
-            }
+        // Auth 상태 변화 감지 (로그인/로그아웃)
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('userName').textContent = user.email.split('@')[0];
+                    
+                    await loadUserData();
+                    renderCategoryTabs();
+                    renderSeasonSelector();
+                    updateItemCount();
+                } else {
+                    currentUser = null;
+                    document.getElementById('authScreen').classList.remove('hidden');
+                    wardrobe = {};
+                    outfits = {};
+                }
+            });
         });
 
         // ===== Data Management =====
