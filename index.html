@@ -39,9 +39,10 @@
       background: #0a0a0a;
       color: #f5f0e8;
       overscroll-behavior: none;
+      padding-top: env(safe-area-inset-top);
     }
     
-    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: #111; }
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
     
@@ -58,6 +59,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     
     .tab-btn {
@@ -256,9 +258,192 @@
       border-color: #c9a96e;
       color: #c9a96e;
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+      overflow-y: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-box {
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 32px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+      margin: auto;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .icon-btn {
+      padding: 12px;
+      background: #0a0a0a;
+      border: 2px solid #1a1a1a;
+      border-radius: 4px;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      border-color: #c9a96e;
+      background: #111;
+    }
+
+    .icon-btn.selected {
+      border-color: #c9a96e;
+      background: #151515;
+    }
+
+    .edit-cat-btn {
+      padding: 4px 8px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 2px;
+      color: #777;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 4px;
+    }
+
+    .edit-cat-btn:hover {
+      border-color: #c9a96e;
+      color: #c9a96e;
+    }
+
+    .delete-cat-btn {
+      padding: 4px 8px;
+      background: transparent;
+      border: 1px solid #553;
+      border-radius: 2px;
+      color: #977;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 4px;
+    }
+
+    .delete-cat-btn:hover {
+      border-color: #f55;
+      color: #f55;
+    }
+
+    .add-item-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid #c9a96e;
+      border-radius: 2px;
+      color: #c9a96e;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .add-item-btn:hover {
+      background: #c9a96e;
+      color: #0a0a0a;
+      transform: translateY(-1px);
+    }
+
+    .season-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border: 1px solid #333;
+      border-radius: 2px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #0a0a0a;
+    }
+
+    .season-tag.selected {
+      border-color: #c9a96e;
+      background: #c9a96e;
+      color: #0a0a0a;
+    }
+
+    .season-tag:hover {
+      border-color: #c9a96e;
+    }
+
+    .preview-image {
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #0a0a0a;
+      margin-bottom: 16px;
+    }
+
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .meta-tag {
+      padding: 3px 8px;
+      background: #151515;
+      border: 1px solid #222;
+      border-radius: 2px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: #999;
+    }
     
     @media (max-width: 768px) {
       .auth-box { padding: 30px 20px; }
+      .modal-box { padding: 24px 16px; }
+      .user-badge {
+        flex-direction: column;
+        gap: 4px;
+      }
+      body {
+        padding-top: max(20px, env(safe-area-inset-top));
+      }
     }
   </style>
 </head>
@@ -286,7 +471,7 @@
     const db = getFirestore(app);
     const googleProvider = new GoogleAuthProvider();
 
-    const CATEGORIES = [
+    const DEFAULT_CATEGORIES = [
       { id: "TOPS", label: "TOPS", icon: "👔" },
       { id: "T-SHIRTS", label: "T-SHIRTS", icon: "👕" },
       { id: "PANTS", label: "PANTS", icon: "👖" },
@@ -295,6 +480,15 @@
       { id: "SHOES", label: "SHOES", icon: "👟" },
       { id: "BAG", label: "BAG", icon: "👜" },
       { id: "ACCESSORY", label: "ACCESSORY", icon: "💍" },
+    ];
+
+    const ICON_OPTIONS = [
+      "👔", "👕", "👖", "👗", "👘", "👙", "👚", 
+      "🧥", "🧣", "🧤", "🧦", "👟", "👞", "👠",
+      "👡", "👢", "👑", "🎩", "🧢", "👒", "🎓",
+      "💍", "💎", "📿", "👜", "👝", "🎒", "👓",
+      "🕶️", "🥾", "🥿", "🩱", "🩳", "🩲", "👘",
+      "🎀", "🌂", "☂️", "⌚", "🔗", "🧷"
     ];
 
     const SEASONS = [
@@ -312,12 +506,25 @@
       error: '',
       tab: 'wardrobe',
       activeCategory: 'TOPS',
+      categories: [...DEFAULT_CATEGORIES],
       wardrobe: {},
       activeSeason: 'spring',
       outfits: {},
       loading: false,
       dragOver: false,
-      syncing: false
+      syncing: false,
+      modal: null,
+      editingCategory: null,
+      newCategoryName: '',
+      newCategoryIcon: '👔',
+      // Add item modal state
+      newItem: {
+        image: null,
+        name: '',
+        seasons: [],
+        color: '',
+        brand: ''
+      }
     };
 
     let unsubscribeFirestore = null;
@@ -438,24 +645,32 @@
           <div class="scrollable">
             ${state.tab === 'wardrobe' ? renderWardrobe(currentItems, totalItems) : renderOutfit(season, currentOutfits, totalItems)}
           </div>
+
+          ${state.modal ? renderModal() : ''}
         </div>
       `;
     }
 
     function renderWardrobe(currentItems, totalItems) {
       return `
-        <div style="padding: 24px;">
+        <div style="padding: 24px; padding-bottom: 60px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
             <div style="font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300;">
               Your Collection
             </div>
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; letter-spacing: 0.15em;">
-              ${totalItems} ITEMS
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; letter-spacing: 0.15em;">
+                ${totalItems} ITEMS
+              </div>
+              <button class="add-item-btn" id="addItemBtn">
+                <span style="font-size: 14px;">+</span>
+                <span>ADD</span>
+              </button>
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 32px; padding-bottom: 8px;">
-            ${CATEGORIES.map(cat => `
+          <div style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 24px; padding-bottom: 8px; -webkit-overflow-scrolling: touch;">
+            ${state.categories.map(cat => `
               <button 
                 class="cat-btn" 
                 data-category="${cat.id}"
@@ -488,44 +703,47 @@
                     ${(state.wardrobe[cat.id] || []).length}
                   </span>
                 ` : ''}
+                ${state.activeCategory === cat.id ? `
+                  <button class="edit-cat-btn" data-edit-cat="${cat.id}">✏️</button>
+                  ${state.categories.length > 1 ? `<button class="delete-cat-btn" data-delete-cat="${cat.id}">🗑️</button>` : ''}
+                ` : ''}
               </button>
             `).join('')}
+            <button 
+              class="cat-btn" 
+              id="addCategoryBtn"
+              style="
+                flex-shrink: 0;
+                padding: 12px 20px;
+                background: #0f0f0f;
+                border: 1px dashed #c9a96e;
+                border-radius: 2px;
+                color: #c9a96e;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span style="font-size: 18px;">+</span>
+              <span style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.15em;">
+                ADD
+              </span>
+            </button>
           </div>
 
           <main>
-            <div 
-              class="upload-zone" 
-              id="uploadZone"
-              style="
-                border: 2px dashed ${state.dragOver ? '#c9a96e' : '#1a1a1a'};
-                border-radius: 4px;
-                padding: 40px;
-                text-align: center;
-                background: ${state.dragOver ? 'rgba(201,169,110,0.05)' : '#0a0a0a'};
-                margin-bottom: 24px;
-              "
-            >
-              <div style="font-size: 28px; margin-bottom: 10px;">+</div>
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.3em; color: #555;">
-                DRAG & DROP OR CLICK TO UPLOAD
-              </div>
-              <input 
-                type="file" 
-                id="fileInput" 
-                multiple 
-                accept="image/*" 
-                style="display: none;"
-              />
-            </div>
-
             ${currentItems.length === 0 ? `
               <div style="text-align: center; padding: 60px 0; color: #333;">
                 <div style="font-family: 'Cormorant Garamond', serif; font-size: 20px; margin-bottom: 8px;">
                   Empty Category
                 </div>
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #444;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #444; margin-bottom: 16px;">
                   ADD YOUR FIRST ${state.activeCategory} ITEM
                 </div>
+                <button class="add-item-btn" onclick="document.getElementById('addItemBtn').click()" style="margin: 0 auto;">
+                  <span style="font-size: 14px;">+</span>
+                  <span>ADD ITEM</span>
+                </button>
               </div>
             ` : `
               <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px;">
@@ -565,6 +783,16 @@
                       ">
                         ${item.name}
                       </div>
+                      ${(item.seasons?.length > 0 || item.color || item.brand) ? `
+                        <div class="item-meta">
+                          ${item.seasons?.map(s => {
+                            const season = SEASONS.find(se => se.id === s);
+                            return `<span class="meta-tag">${season.emoji}</span>`;
+                          }).join('') || ''}
+                          ${item.color ? `<span class="meta-tag">${item.color}</span>` : ''}
+                          ${item.brand ? `<span class="meta-tag">${item.brand}</span>` : ''}
+                        </div>
+                      ` : ''}
                     </div>
                   </div>
                 `).join('')}
@@ -577,7 +805,7 @@
 
     function renderOutfit(season, currentOutfits, totalItems) {
       return `
-        <div style="padding: 24px;">
+        <div style="padding: 24px; padding-bottom: 60px;">
           <div style="display: flex; gap: 12px; margin-bottom: 36px; flex-wrap: wrap;">
             ${SEASONS.map(s => `
               <button 
@@ -808,6 +1036,196 @@
       `;
     }
 
+    function renderModal() {
+      if (state.modal === 'editCategory' || state.modal === 'addCategory') {
+        const isEdit = state.modal === 'editCategory';
+        const category = isEdit ? state.categories.find(c => c.id === state.editingCategory) : null;
+        
+        return `
+          <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box" onclick="event.stopPropagation()">
+              <div style="margin-bottom: 24px;">
+                <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
+                  ${isEdit ? 'Edit Category' : 'New Category'}
+                </div>
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                  ${isEdit ? 'MODIFY YOUR CATEGORY' : 'CREATE A NEW CATEGORY'}
+                </div>
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  CATEGORY NAME
+                </label>
+                <input 
+                  type="text" 
+                  id="categoryNameInput" 
+                  class="auth-input"
+                  value="${isEdit ? category.label : state.newCategoryName}"
+                  placeholder="e.g., SNEAKERS"
+                  style="margin-bottom: 0;"
+                />
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 12px;">
+                  SELECT ICON
+                </label>
+                <div class="icon-grid">
+                  ${ICON_OPTIONS.map(icon => `
+                    <button 
+                      class="icon-btn ${(isEdit ? category.icon : state.newCategoryIcon) === icon ? 'selected' : ''}" 
+                      data-icon="${icon}"
+                    >
+                      ${icon}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px;">
+                <button 
+                  class="auth-btn secondary" 
+                  id="cancelModalBtn"
+                  style="flex: 1;"
+                >
+                  CANCEL
+                </button>
+                <button 
+                  class="auth-btn" 
+                  id="saveModalBtn"
+                  style="flex: 1;"
+                >
+                  ${isEdit ? 'SAVE' : 'CREATE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (state.modal === 'addItem') {
+        return `
+          <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box" onclick="event.stopPropagation()">
+              <div style="margin-bottom: 24px;">
+                <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
+                  Add New Item
+                </div>
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                  ADD TO ${state.activeCategory}
+                </div>
+              </div>
+
+              ${state.newItem.image ? `
+                <img src="${state.newItem.image}" class="preview-image" alt="Preview" />
+              ` : `
+                <div 
+                  class="upload-zone" 
+                  id="itemUploadZone"
+                  style="
+                    border: 2px dashed #1a1a1a;
+                    border-radius: 4px;
+                    padding: 40px;
+                    text-align: center;
+                    background: #0a0a0a;
+                    margin-bottom: 16px;
+                    cursor: pointer;
+                  "
+                >
+                  <div style="font-size: 28px; margin-bottom: 10px;">📷</div>
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.3em; color: #555;">
+                    CLICK TO SELECT IMAGE
+                  </div>
+                  <input 
+                    type="file" 
+                    id="itemImageInput" 
+                    accept="image/*" 
+                    style="display: none;"
+                  />
+                </div>
+              `}
+
+              <div style="margin-bottom: 16px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  ITEM NAME
+                </label>
+                <input 
+                  type="text" 
+                  id="itemNameInput" 
+                  class="auth-input"
+                  value="${state.newItem.name}"
+                  placeholder="e.g., Black Leather Jacket"
+                  style="margin-bottom: 0;"
+                />
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  SEASONS (복수 선택 가능)
+                </label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  ${SEASONS.map(s => `
+                    <button 
+                      class="season-tag ${state.newItem.seasons.includes(s.id) ? 'selected' : ''}"
+                      data-season="${s.id}"
+                    >
+                      ${s.emoji} ${s.label}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  COLOR
+                </label>
+                <input 
+                  type="text" 
+                  id="itemColorInput" 
+                  class="auth-input"
+                  value="${state.newItem.color}"
+                  placeholder="e.g., Black, Navy, Beige"
+                  style="margin-bottom: 0;"
+                />
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  BRAND
+                </label>
+                <input 
+                  type="text" 
+                  id="itemBrandInput" 
+                  class="auth-input"
+                  value="${state.newItem.brand}"
+                  placeholder="e.g., Nike, Zara, Uniqlo"
+                  style="margin-bottom: 0;"
+                />
+              </div>
+
+              <div style="display: flex; gap: 12px;">
+                <button 
+                  class="auth-btn secondary" 
+                  id="cancelModalBtn"
+                  style="flex: 1;"
+                >
+                  CANCEL
+                </button>
+                <button 
+                  class="auth-btn" 
+                  id="saveItemBtn"
+                  style="flex: 1;"
+                  ${!state.newItem.image ? 'disabled' : ''}
+                >
+                  ADD ITEM
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      return '';
+    }
+
     function attachAuthListeners() {
       const emailInput = document.getElementById('emailInput');
       const passwordInput = document.getElementById('passwordInput');
@@ -889,11 +1307,71 @@
 
       // Category buttons
       document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.activeCategory = btn.dataset.category;
+        btn.addEventListener('click', e => {
+          if (!e.target.dataset.editCat && !e.target.dataset.deleteCat) {
+            state.activeCategory = btn.dataset.category;
+            render();
+          }
+        });
+      });
+
+      // Edit category buttons
+      document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const catId = btn.dataset.editCat;
+          const category = state.categories.find(c => c.id === catId);
+          state.editingCategory = catId;
+          state.newCategoryName = category.label;
+          state.newCategoryIcon = category.icon;
+          state.modal = 'editCategory';
           render();
         });
       });
+
+      // Delete category buttons
+      document.querySelectorAll('.delete-cat-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const catId = btn.dataset.deleteCat;
+          if (confirm('이 카테고리를 삭제하시겠습니까? 카테고리 내 모든 아이템도 삭제됩니다.')) {
+            state.categories = state.categories.filter(c => c.id !== catId);
+            delete state.wardrobe[catId];
+            if (state.activeCategory === catId) {
+              state.activeCategory = state.categories[0].id;
+            }
+            saveToFirestore();
+            render();
+          }
+        });
+      });
+
+      // Add category button
+      const addCategoryBtn = document.getElementById('addCategoryBtn');
+      if (addCategoryBtn) {
+        addCategoryBtn.addEventListener('click', () => {
+          state.newCategoryName = '';
+          state.newCategoryIcon = '👔';
+          state.modal = 'addCategory';
+          render();
+        });
+      }
+
+      // Add item button
+      const addItemBtn = document.getElementById('addItemBtn');
+      if (addItemBtn) {
+        addItemBtn.addEventListener('click', () => {
+          state.newItem = {
+            image: null,
+            name: '',
+            seasons: [],
+            color: '',
+            brand: ''
+          };
+          state.modal = 'addItem';
+          render();
+        });
+      }
 
       // Season buttons
       document.querySelectorAll('.season-btn').forEach(btn => {
@@ -902,35 +1380,6 @@
           render();
         });
       });
-
-      // Upload zone
-      const uploadZone = document.getElementById('uploadZone');
-      const fileInput = document.getElementById('fileInput');
-
-      if (uploadZone && fileInput) {
-        uploadZone.addEventListener('click', () => fileInput.click());
-
-        uploadZone.addEventListener('dragover', e => {
-          e.preventDefault();
-          state.dragOver = true;
-          render();
-        });
-
-        uploadZone.addEventListener('dragleave', () => {
-          state.dragOver = false;
-          render();
-        });
-
-        uploadZone.addEventListener('drop', e => {
-          e.preventDefault();
-          state.dragOver = false;
-          handleImageUpload(e.dataTransfer.files);
-        });
-
-        fileInput.addEventListener('change', e => {
-          handleImageUpload(e.target.files);
-        });
-      }
 
       // Delete buttons
       document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -951,31 +1400,191 @@
       if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
       }
+
+      // Modal listeners
+      if (state.modal) {
+        attachModalListeners();
+      }
     }
 
-    function handleImageUpload(files) {
-      Array.from(files).forEach(file => {
-        if (!file.type.startsWith('image/')) return;
-        
-        const reader = new FileReader();
-        reader.onload = e => {
-          const newItem = {
-            id: Date.now() + Math.random(),
-            src: e.target.result,
-            name: file.name.replace(/\.[^.]+$/, ''),
-            category: state.activeCategory
-          };
-          
-          state.wardrobe[state.activeCategory] = [
-            ...(state.wardrobe[state.activeCategory] || []),
-            newItem
-          ];
-          
-          saveToFirestore();
+    function attachModalListeners() {
+      const modalOverlay = document.getElementById('modalOverlay');
+      const cancelBtn = document.getElementById('cancelModalBtn');
+
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', () => {
+          state.modal = null;
           render();
-        };
-        reader.readAsDataURL(file);
-      });
+        });
+      }
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+          state.modal = null;
+          render();
+        });
+      }
+
+      if (state.modal === 'editCategory' || state.modal === 'addCategory') {
+        const saveBtn = document.getElementById('saveModalBtn');
+        const nameInput = document.getElementById('categoryNameInput');
+
+        if (saveBtn) {
+          saveBtn.addEventListener('click', saveCategory);
+        }
+
+        if (nameInput) {
+          nameInput.addEventListener('input', e => {
+            state.newCategoryName = e.target.value;
+          });
+
+          nameInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+              saveCategory();
+            }
+          });
+
+          setTimeout(() => nameInput.focus(), 100);
+        }
+
+        // Icon buttons
+        document.querySelectorAll('.icon-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.newCategoryIcon = btn.dataset.icon;
+            render();
+          });
+        });
+      } else if (state.modal === 'addItem') {
+        const uploadZone = document.getElementById('itemUploadZone');
+        const imageInput = document.getElementById('itemImageInput');
+        const nameInput = document.getElementById('itemNameInput');
+        const colorInput = document.getElementById('itemColorInput');
+        const brandInput = document.getElementById('itemBrandInput');
+        const saveItemBtn = document.getElementById('saveItemBtn');
+
+        if (uploadZone && imageInput) {
+          uploadZone.addEventListener('click', () => imageInput.click());
+          
+          imageInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = evt => {
+                state.newItem.image = evt.target.result;
+                render();
+              };
+              reader.readAsDataURL(file);
+            }
+          });
+        }
+
+        if (nameInput) {
+          nameInput.addEventListener('input', e => {
+            state.newItem.name = e.target.value;
+          });
+        }
+
+        if (colorInput) {
+          colorInput.addEventListener('input', e => {
+            state.newItem.color = e.target.value;
+          });
+        }
+
+        if (brandInput) {
+          brandInput.addEventListener('input', e => {
+            state.newItem.brand = e.target.value;
+          });
+        }
+
+        // Season tags
+        document.querySelectorAll('.season-tag').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const seasonId = btn.dataset.season;
+            if (state.newItem.seasons.includes(seasonId)) {
+              state.newItem.seasons = state.newItem.seasons.filter(s => s !== seasonId);
+            } else {
+              state.newItem.seasons.push(seasonId);
+            }
+            render();
+          });
+        });
+
+        if (saveItemBtn) {
+          saveItemBtn.addEventListener('click', saveItem);
+        }
+      }
+    }
+
+    function saveCategory() {
+      const name = state.newCategoryName.trim().toUpperCase();
+      
+      if (!name) {
+        alert('카테고리 이름을 입력해주세요.');
+        return;
+      }
+
+      if (state.modal === 'editCategory') {
+        const category = state.categories.find(c => c.id === state.editingCategory);
+        const oldId = category.id;
+        const newId = name;
+
+        category.id = newId;
+        category.label = name;
+        category.icon = state.newCategoryIcon;
+
+        if (oldId !== newId) {
+          state.wardrobe[newId] = state.wardrobe[oldId] || [];
+          delete state.wardrobe[oldId];
+          if (state.activeCategory === oldId) {
+            state.activeCategory = newId;
+          }
+        }
+      } else {
+        const exists = state.categories.find(c => c.id === name);
+        if (exists) {
+          alert('이미 존재하는 카테고리 이름입니다.');
+          return;
+        }
+
+        state.categories.push({
+          id: name,
+          label: name,
+          icon: state.newCategoryIcon
+        });
+        state.activeCategory = name;
+      }
+
+      state.modal = null;
+      saveToFirestore();
+      render();
+    }
+
+    function saveItem() {
+      if (!state.newItem.image) {
+        alert('이미지를 선택해주세요.');
+        return;
+      }
+
+      const name = state.newItem.name.trim() || 'Untitled';
+
+      const newItem = {
+        id: Date.now() + Math.random(),
+        src: state.newItem.image,
+        name: name,
+        category: state.activeCategory,
+        seasons: state.newItem.seasons,
+        color: state.newItem.color.trim(),
+        brand: state.newItem.brand.trim()
+      };
+
+      state.wardrobe[state.activeCategory] = [
+        ...(state.wardrobe[state.activeCategory] || []),
+        newItem
+      ];
+
+      state.modal = null;
+      saveToFirestore();
+      render();
     }
 
     function removeItem(itemId) {
@@ -1062,6 +1671,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
         state.syncing = true;
         const userDoc = doc(db, 'users', state.user.uid);
         await setDoc(userDoc, {
+          categories: state.categories,
           wardrobe: state.wardrobe,
           outfits: state.outfits,
           updatedAt: new Date().toISOString()
@@ -1083,8 +1693,14 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
       unsubscribeFirestore = onSnapshot(userDoc, snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.data();
+          state.categories = data.categories || [...DEFAULT_CATEGORIES];
           state.wardrobe = data.wardrobe || {};
           state.outfits = data.outfits || {};
+          
+          if (!state.categories.find(c => c.id === state.activeCategory)) {
+            state.activeCategory = state.categories[0]?.id || 'TOPS';
+          }
+          
           render();
         }
       });
@@ -1100,6 +1716,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
           unsubscribeFirestore();
           unsubscribeFirestore = null;
         }
+        state.categories = [...DEFAULT_CATEGORIES];
         state.wardrobe = {};
         state.outfits = {};
       }
