@@ -259,7 +259,6 @@
       color: #c9a96e;
     }
 
-    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -326,7 +325,7 @@
       background: #151515;
     }
 
-    .edit-cat-btn {
+    .edit-cat-btn, .delete-cat-btn {
       padding: 4px 8px;
       background: transparent;
       border: 1px solid #333;
@@ -344,15 +343,8 @@
     }
 
     .delete-cat-btn {
-      padding: 4px 8px;
-      background: transparent;
-      border: 1px solid #553;
-      border-radius: 2px;
+      border-color: #553;
       color: #977;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-left: 4px;
     }
 
     .delete-cat-btn:hover {
@@ -433,6 +425,57 @@
       letter-spacing: 0.1em;
       color: #999;
     }
+
+    .category-edit-item {
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category-edit-item:hover {
+      border-color: #333;
+    }
+
+    .ref-image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .ref-image-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 2px solid #222;
+      cursor: pointer;
+    }
+
+    .ref-image-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ref-image-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+    }
     
     @media (max-width: 768px) {
       .auth-box { padding: 30px 20px; }
@@ -450,11 +493,10 @@
 <body>
   <div id="root"></div>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyAh2GUyt2NDSo-dlbltr45lHzF-RPyGUBQ",
@@ -511,19 +553,21 @@
       activeSeason: 'spring',
       outfits: {},
       loading: false,
-      dragOver: false,
       syncing: false,
       modal: null,
       editingCategory: null,
       newCategoryName: '',
       newCategoryIcon: '👔',
-      // Add item modal state
       newItem: {
         image: null,
         name: '',
         seasons: [],
         color: '',
         brand: ''
+      },
+      aiReference: {
+        images: [],
+        colors: ''
       }
     };
 
@@ -640,10 +684,19 @@
             >
               OUTFIT AI
             </button>
+            <button 
+              class="tab-btn" 
+              data-tab="categories"
+              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'categories' ? '600' : '400'}; color: ${state.tab === 'categories' ? '#c9a96e' : '#555'}; border-bottom: ${state.tab === 'categories' ? '2px solid #c9a96e' : '2px solid transparent'};"
+            >
+              CATEGORIES
+            </button>
           </nav>
 
           <div class="scrollable">
-            ${state.tab === 'wardrobe' ? renderWardrobe(currentItems, totalItems) : renderOutfit(season, currentOutfits, totalItems)}
+            ${state.tab === 'wardrobe' ? renderWardrobe(currentItems, totalItems) : 
+              state.tab === 'outfit' ? renderOutfit(season, currentOutfits, totalItems) :
+              renderCategories()}
           </div>
 
           ${state.modal ? renderModal() : ''}
@@ -703,32 +756,8 @@
                     ${(state.wardrobe[cat.id] || []).length}
                   </span>
                 ` : ''}
-                ${state.activeCategory === cat.id ? `
-                  <button class="edit-cat-btn" data-edit-cat="${cat.id}">✏️</button>
-                  ${state.categories.length > 1 ? `<button class="delete-cat-btn" data-delete-cat="${cat.id}">🗑️</button>` : ''}
-                ` : ''}
               </button>
             `).join('')}
-            <button 
-              class="cat-btn" 
-              id="addCategoryBtn"
-              style="
-                flex-shrink: 0;
-                padding: 12px 20px;
-                background: #0f0f0f;
-                border: 1px dashed #c9a96e;
-                border-radius: 2px;
-                color: #c9a96e;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-              "
-            >
-              <span style="font-size: 18px;">+</span>
-              <span style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.15em;">
-                ADD
-              </span>
-            </button>
           </div>
 
           <main>
@@ -856,6 +885,14 @@
             >
               ${state.loading ? `<span class="pulse">✦ AI 코디 생성 중...</span>` : `✦ ${season.label} 코디 AI 추천받기`}
             </button>
+            <button 
+              class="add-item-btn" 
+              id="aiReferenceBtn"
+              style="margin: 12px auto 0; display: inline-flex;"
+            >
+              <span>📌</span>
+              <span>참고 자료 추가</span>
+            </button>
             ${totalItems < 2 ? `
               <div style="
                 font-family: 'Montserrat', sans-serif;
@@ -865,6 +902,15 @@
                 letter-spacing: 0.15em;
               ">
                 CLOSET에 아이템을 2개 이상 추가해주세요
+              </div>
+            ` : ''}
+            ${(state.aiReference.images.length > 0 || state.aiReference.colors) ? `
+              <div style="margin-top: 16px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.2em; color: #c9a96e; margin-bottom: 8px;">
+                  참고 자료 설정됨
+                </div>
+                ${state.aiReference.images.length > 0 ? `<div style="color: #999; font-size: 11px;">참고 이미지 ${state.aiReference.images.length}개</div>` : ''}
+                ${state.aiReference.colors ? `<div style="color: #999; font-size: 11px;">색상 조합: ${state.aiReference.colors}</div>` : ''}
               </div>
             ` : ''}
           </div>
@@ -1032,6 +1078,44 @@
               </div>
             </div>
           ` : ''}
+        </div>
+      `;
+    }
+
+    function renderCategories() {
+      return `
+        <div style="padding: 24px; padding-bottom: 60px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300;">
+              Categories
+            </div>
+            <button class="add-item-btn" id="addCategoryBtn">
+              <span style="font-size: 14px;">+</span>
+              <span>ADD</span>
+            </button>
+          </div>
+
+          <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777; margin-bottom: 24px;">
+            카테고리를 편집하면 옷장에 자동으로 반영됩니다
+          </div>
+
+          <div>
+            ${state.categories.map(cat => `
+              <div class="category-edit-item">
+                <div style="font-size: 32px; flex-shrink: 0;">${cat.icon}</div>
+                <div style="flex: 1;">
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #f5f0e8; margin-bottom: 4px;">
+                    ${cat.label}
+                  </div>
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: #666;">
+                    ${(state.wardrobe[cat.id] || []).length} items
+                  </div>
+                </div>
+                <button class="edit-cat-btn" data-edit-cat="${cat.id}">✏️</button>
+                ${state.categories.length > 1 ? `<button class="delete-cat-btn" data-delete-cat="${cat.id}">🗑️</button>` : ''}
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
     }
@@ -1222,6 +1306,93 @@
             </div>
           </div>
         `;
+      } else if (state.modal === 'aiReference') {
+        return `
+          <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box" onclick="event.stopPropagation()">
+              <div style="margin-bottom: 24px;">
+                <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
+                  AI 참고 자료
+                </div>
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                  코디 추천 시 참고할 이미지와 색상을 설정하세요
+                </div>
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 12px;">
+                  참고 코디 이미지
+                </label>
+                <div 
+                  class="upload-zone" 
+                  id="refUploadZone"
+                  style="
+                    border: 2px dashed #1a1a1a;
+                    border-radius: 4px;
+                    padding: 30px;
+                    text-align: center;
+                    background: #0a0a0a;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                  "
+                >
+                  <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #555;">
+                    CLICK TO ADD IMAGES
+                  </div>
+                  <input 
+                    type="file" 
+                    id="refImageInput" 
+                    accept="image/*" 
+                    multiple
+                    style="display: none;"
+                  />
+                </div>
+                ${state.aiReference.images.length > 0 ? `
+                  <div class="ref-image-grid">
+                    ${state.aiReference.images.map((img, idx) => `
+                      <div class="ref-image-item">
+                        <img src="${img}" alt="Reference ${idx + 1}" />
+                        <button class="ref-image-remove" data-ref-idx="${idx}">×</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                  색상 조합
+                </label>
+                <input 
+                  type="text" 
+                  id="refColorInput" 
+                  class="auth-input"
+                  value="${state.aiReference.colors}"
+                  placeholder="e.g., Black & White, Navy & Beige"
+                  style="margin-bottom: 0;"
+                />
+              </div>
+
+              <div style="display: flex; gap: 12px;">
+                <button 
+                  class="auth-btn secondary" 
+                  id="cancelModalBtn"
+                  style="flex: 1;"
+                >
+                  CANCEL
+                </button>
+                <button 
+                  class="auth-btn" 
+                  id="saveRefBtn"
+                  style="flex: 1;"
+                >
+                  SAVE
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
       }
       return '';
     }
@@ -1297,7 +1468,6 @@
     }
 
     function attachAppListeners() {
-      // Tab buttons
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.tab = btn.dataset.tab;
@@ -1305,17 +1475,13 @@
         });
       });
 
-      // Category buttons
       document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          if (!e.target.dataset.editCat && !e.target.dataset.deleteCat) {
-            state.activeCategory = btn.dataset.category;
-            render();
-          }
+        btn.addEventListener('click', () => {
+          state.activeCategory = btn.dataset.category;
+          render();
         });
       });
 
-      // Edit category buttons
       document.querySelectorAll('.edit-cat-btn').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
@@ -1329,7 +1495,6 @@
         });
       });
 
-      // Delete category buttons
       document.querySelectorAll('.delete-cat-btn').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
@@ -1346,7 +1511,6 @@
         });
       });
 
-      // Add category button
       const addCategoryBtn = document.getElementById('addCategoryBtn');
       if (addCategoryBtn) {
         addCategoryBtn.addEventListener('click', () => {
@@ -1357,7 +1521,6 @@
         });
       }
 
-      // Add item button
       const addItemBtn = document.getElementById('addItemBtn');
       if (addItemBtn) {
         addItemBtn.addEventListener('click', () => {
@@ -1373,7 +1536,14 @@
         });
       }
 
-      // Season buttons
+      const aiReferenceBtn = document.getElementById('aiReferenceBtn');
+      if (aiReferenceBtn) {
+        aiReferenceBtn.addEventListener('click', () => {
+          state.modal = 'aiReference';
+          render();
+        });
+      }
+
       document.querySelectorAll('.season-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.activeSeason = btn.dataset.season;
@@ -1381,7 +1551,6 @@
         });
       });
 
-      // Delete buttons
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const itemId = btn.dataset.itemId;
@@ -1389,19 +1558,16 @@
         });
       });
 
-      // AI button
       const aiBtn = document.getElementById('aiBtn');
       if (aiBtn) {
         aiBtn.addEventListener('click', getAIOutfit);
       }
 
-      // Logout button
       const logoutBtn = document.getElementById('logoutBtn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
       }
 
-      // Modal listeners
       if (state.modal) {
         attachModalListeners();
       }
@@ -1447,7 +1613,6 @@
           setTimeout(() => nameInput.focus(), 100);
         }
 
-        // Icon buttons
         document.querySelectorAll('.icon-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             state.newCategoryIcon = btn.dataset.icon;
@@ -1496,7 +1661,6 @@
           });
         }
 
-        // Season tags
         document.querySelectorAll('.season-tag').forEach(btn => {
           btn.addEventListener('click', () => {
             const seasonId = btn.dataset.season;
@@ -1511,6 +1675,53 @@
 
         if (saveItemBtn) {
           saveItemBtn.addEventListener('click', saveItem);
+        }
+      } else if (state.modal === 'aiReference') {
+        const uploadZone = document.getElementById('refUploadZone');
+        const imageInput = document.getElementById('refImageInput');
+        const colorInput = document.getElementById('refColorInput');
+        const saveRefBtn = document.getElementById('saveRefBtn');
+
+        if (uploadZone && imageInput) {
+          uploadZone.addEventListener('click', () => imageInput.click());
+          
+          imageInput.addEventListener('change', e => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+              if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = evt => {
+                  state.aiReference.images.push(evt.target.result);
+                  render();
+                };
+                reader.readAsDataURL(file);
+              }
+            });
+            // Reset input
+            e.target.value = '';
+          });
+        }
+
+        if (colorInput) {
+          colorInput.addEventListener('input', e => {
+            state.aiReference.colors = e.target.value;
+          });
+        }
+
+        document.querySelectorAll('.ref-image-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.refIdx);
+            state.aiReference.images.splice(idx, 1);
+            render();
+          });
+        });
+
+        if (saveRefBtn) {
+          saveRefBtn.addEventListener('click', () => {
+            state.modal = null;
+            saveToFirestore();
+            render();
+          });
         }
       }
     }
@@ -1537,6 +1748,13 @@
           delete state.wardrobe[oldId];
           if (state.activeCategory === oldId) {
             state.activeCategory = newId;
+          }
+          
+          // Update all items in the category
+          if (state.wardrobe[newId]) {
+            state.wardrobe[newId].forEach(item => {
+              item.category = newId;
+            });
           }
         }
       } else {
@@ -1583,6 +1801,13 @@
       ];
 
       state.modal = null;
+      state.newItem = {
+        image: null,
+        name: '',
+        seasons: [],
+        color: '',
+        brand: ''
+      };
       saveToFirestore();
       render();
     }
@@ -1610,7 +1835,19 @@
 
       try {
         const seasonInfo = SEASONS.find(s => s.id === state.activeSeason);
-        const prompt = `당신은 한국의 패션 스타일리스트입니다. 아래 옷장 아이템 목록을 보고 ${seasonInfo.label} 시즌에 어울리는 코디를 추천해주세요.
+        
+        let referenceText = '';
+        if (state.aiReference.images.length > 0 || state.aiReference.colors) {
+          referenceText = '\n\n참고 자료:';
+          if (state.aiReference.images.length > 0) {
+            referenceText += `\n- ${state.aiReference.images.length}개의 참고 코디 이미지가 제공되었습니다. 이 이미지들의 스타일과 조합을 참고하세요.`;
+          }
+          if (state.aiReference.colors) {
+            referenceText += `\n- 선호 색상 조합: ${state.aiReference.colors}`;
+          }
+        }
+
+        const prompt = `당신은 한국의 패션 스타일리스트입니다. 아래 옷장 아이템 목록을 보고 ${seasonInfo.label} 시즌에 어울리는 코디를 추천해주세요.${referenceText}
 
 옷장 아이템:
 ${allItems.map(i => `- [${i.category}] ${i.name}`).join('\n')}
@@ -1628,7 +1865,7 @@ ${allItems.map(i => `- [${i.category}] ${i.name}`).join('\n')}
   ]
 }
 
-${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코디를 추천해주세요. 반드시 위 옷장에 있는 아이템만 사용하세요.`;
+${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코디를 추천해주세요. 반드시 위 옷장에 있는 아이템만 사용하세요.${referenceText ? ' 제공된 참고 자료의 스타일과 색상 조합을 최대한 반영해주세요.' : ''}`;
 
         const res = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -1674,6 +1911,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
           categories: state.categories,
           wardrobe: state.wardrobe,
           outfits: state.outfits,
+          aiReference: state.aiReference,
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } catch (error) {
@@ -1696,6 +1934,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
           state.categories = data.categories || [...DEFAULT_CATEGORIES];
           state.wardrobe = data.wardrobe || {};
           state.outfits = data.outfits || {};
+          state.aiReference = data.aiReference || { images: [], colors: '' };
           
           if (!state.categories.find(c => c.id === state.activeCategory)) {
             state.activeCategory = state.categories[0]?.id || 'TOPS';
@@ -1719,6 +1958,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
         state.categories = [...DEFAULT_CATEGORIES];
         state.wardrobe = {};
         state.outfits = {};
+        state.aiReference = { images: [], colors: '' };
       }
       
       render();
