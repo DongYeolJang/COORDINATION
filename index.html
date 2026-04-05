@@ -667,6 +667,7 @@
     };
 
     let unsubscribeFirestore = null;
+    let isSavingItem = false; // 아이템 저장 중 플래그
 
     // Apply theme
     function applyTheme(theme) {
@@ -1451,9 +1452,9 @@
                   class="auth-btn" 
                   id="saveItemBtn"
                   style="flex: 1;"
-                  ${!state.newItem.image ? 'disabled' : ''}
+                  ${!state.newItem.image || isSavingItem ? 'disabled' : ''}
                 >
-                  ADD ITEM
+                  ${isSavingItem ? 'SAVING...' : 'ADD ITEM'}
                 </button>
               </div>
             </div>
@@ -1697,7 +1698,6 @@
       const addItemBtn = document.getElementById('addItemBtn');
       if (addItemBtn) {
         addItemBtn.addEventListener('click', () => {
-          // 완전히 새로운 객체로 초기화
           state.newItem = {
             image: null,
             name: '',
@@ -1742,7 +1742,6 @@
         logoutBtnSettings.addEventListener('click', handleLogout);
       }
 
-      // Theme selector
       document.querySelectorAll('.theme-option').forEach(btn => {
         btn.addEventListener('click', () => {
           const theme = btn.dataset.theme;
@@ -1967,15 +1966,18 @@
       render();
     }
 
-    function saveItem() {
-      if (!state.newItem.image) {
-        alert('이미지를 선택해주세요.');
+    async function saveItem() {
+      if (!state.newItem.image || isSavingItem) {
         return;
       }
 
+      // 저장 중 플래그 설정
+      isSavingItem = true;
+      render();
+
       const name = state.newItem.name.trim() || 'Untitled';
 
-      // 새로운 아이템 객체 생성
+      // 새 아이템 데이터 복사본 생성
       const newItemData = {
         id: Date.now() + Math.random(),
         src: state.newItem.image,
@@ -1986,16 +1988,18 @@
         brand: state.newItem.brand.trim()
       };
 
-      // wardrobe에 추가
+      // State 업데이트 (로컬 먼저)
       if (!state.wardrobe[state.activeCategory]) {
         state.wardrobe[state.activeCategory] = [];
       }
-      state.wardrobe[state.activeCategory] = [
-        ...state.wardrobe[state.activeCategory],
-        newItemData
-      ];
+      
+      // 새 배열 생성하여 불변성 유지
+      state.wardrobe = {
+        ...state.wardrobe,
+        [state.activeCategory]: [...state.wardrobe[state.activeCategory], newItemData]
+      };
 
-      // 모달 닫고 newItem 완전 초기화
+      // 모달 닫고 newItem 초기화
       state.modal = null;
       state.newItem = {
         image: null,
@@ -2004,11 +2008,33 @@
         color: '',
         brand: ''
       };
-      
-      // Firestore 저장 후 렌더링
-      saveToFirestore().then(() => {
+
+      try {
+        // Firestore 저장 (Listener 비활성화 후)
+        if (unsubscribeFirestore) {
+          unsubscribeFirestore();
+        }
+
+        const userDoc = doc(db, 'users', state.user.uid);
+        await setDoc(userDoc, {
+          wardrobe: state.wardrobe,
+          categories: state.categories,
+          outfits: state.outfits,
+          aiReference: state.aiReference,
+          settings: state.settings,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        // Listener 재활성화
+        setupFirestoreSync(state.user.uid);
+
+      } catch (error) {
+        console.error('Save error:', error);
+        alert('저장 중 오류가 발생했습니다.');
+      } finally {
+        isSavingItem = false;
         render();
-      });
+      }
     }
 
     function removeItem(itemId) {
@@ -2134,7 +2160,13 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
 
       const userDoc = doc(db, 'users', userId);
       
+      // isSavingItem일 때는 업데이트 무시
       unsubscribeFirestore = onSnapshot(userDoc, snapshot => {
+        if (isSavingItem) {
+          console.log('Ignoring Firestore update during save');
+          return;
+        }
+
         if (snapshot.exists()) {
           const data = snapshot.data();
           state.categories = data.categories || [...DEFAULT_CATEGORIES];
@@ -2175,7 +2207,6 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
       render();
     });
 
-    // Apply initial theme
     applyTheme(state.settings.theme);
     render();
   </script>
