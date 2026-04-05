@@ -36,15 +36,81 @@
     
     body {
       font-family: 'Georgia', serif;
-      background: #0a0a0a;
-      color: #f5f0e8;
       overscroll-behavior: none;
       padding-top: env(safe-area-inset-top);
     }
     
+    body.theme-dark {
+      background: #0a0a0a;
+      color: #f5f0e8;
+    }
+    
+    body.theme-light {
+      background: #fafafa;
+      color: #1a1a1a;
+    }
+    
+    body.theme-blue {
+      background: #0f1419;
+      color: #e7f0ff;
+    }
+    
+    body.theme-forest {
+      background: #0d1b0d;
+      color: #e8f5e8;
+    }
+    
     ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #111; }
-    ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #0f0f0f;
+      --bg-tertiary: #151515;
+      --text-primary: #f5f0e8;
+      --text-secondary: #999;
+      --text-tertiary: #666;
+      --border-color: #222;
+      --accent-color: #c9a96e;
+      --accent-hover: #a8864a;
+    }
+    
+    body.theme-light {
+      --bg-primary: #fafafa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f0f0f0;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --text-tertiary: #999;
+      --border-color: #e0e0e0;
+      --accent-color: #c9a96e;
+      --accent-hover: #a8864a;
+    }
+    
+    body.theme-blue {
+      --bg-primary: #0f1419;
+      --bg-secondary: #1a1f26;
+      --bg-tertiary: #252b33;
+      --text-primary: #e7f0ff;
+      --text-secondary: #8899aa;
+      --text-tertiary: #556677;
+      --border-color: #2a3340;
+      --accent-color: #5ea3d0;
+      --accent-hover: #4a8ab8;
+    }
+    
+    body.theme-forest {
+      --bg-primary: #0d1b0d;
+      --bg-secondary: #162616;
+      --bg-tertiary: #1f311f;
+      --text-primary: #e8f5e8;
+      --text-secondary: #99bb99;
+      --text-tertiary: #667766;
+      --border-color: #2a3d2a;
+      --accent-color: #7cb87c;
+      --accent-hover: #6a9d6a;
+    }
     
     .app-container {
       width: 100%;
@@ -52,6 +118,8 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      background: var(--bg-primary);
+      color: var(--text-primary);
     }
     
     .scrollable {
@@ -74,9 +142,9 @@
     .tab-btn:hover { opacity: 0.7; }
     .tab-btn:active { transform: scale(0.95); }
     
-    .cat-btn {
+    .cat-btn, .season-btn, .ai-btn, .add-item-btn {
       cursor: pointer;
-      transition: all 0.25s;
+      transition: all 0.3s;
       border: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -107,15 +175,8 @@
     }
     
     .upload-zone:hover {
-      border-color: #c9a96e !important;
-      background: rgba(201,169,110,0.05) !important;
-    }
-    
-    .season-btn {
-      cursor: pointer;
-      transition: all 0.3s;
-      border: none;
-      -webkit-tap-highlight-color: transparent;
+      border-color: var(--accent-color) !important;
+      background: color-mix(in srgb, var(--accent-color) 5%, transparent) !important;
     }
     
     .season-btn:hover { transform: scale(1.02); }
@@ -133,17 +194,9 @@
     .outfit-card:nth-child(2) { animation-delay: 0.1s; }
     .outfit-card:nth-child(3) { animation-delay: 0.2s; }
     
-    .ai-btn {
-      cursor: pointer;
-      transition: all 0.3s;
-      border: none;
-      letter-spacing: 0.15em;
-      -webkit-tap-highlight-color: transparent;
-    }
-    
     .ai-btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(201,169,110,0.4);
+      box-shadow: 0 8px 30px color-mix(in srgb, var(--accent-color) 40%, transparent);
     }
     
     .ai-btn:active:not(:disabled) { transform: scale(0.98); }
@@ -164,11 +217,12 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      background: var(--bg-primary);
     }
     
     .auth-box {
-      background: #0f0f0f;
-      border: 1px solid #222;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       padding: 40px;
       max-width: 400px;
@@ -178,10 +232,10 @@
     .auth-input {
       width: 100%;
       padding: 14px 16px;
-      background: #0a0a0a;
-      border: 1px solid #222;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
       border-radius: 2px;
-      color: #f5f0e8;
+      color: var(--text-primary);
       font-family: 'Montserrat', sans-serif;
       font-size: 13px;
       margin-bottom: 12px;
@@ -190,15 +244,15 @@
     
     .auth-input:focus {
       outline: none;
-      border-color: #c9a96e;
-      background: #111;
+      border-color: var(--accent-color);
+      background: var(--bg-tertiary);
     }
     
     .auth-btn {
       width: 100%;
       padding: 14px;
-      background: linear-gradient(135deg, #c9a96e, #a8864a);
-      color: #0a0a0a;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+      color: var(--bg-primary);
       border: none;
       border-radius: 2px;
       font-family: 'Montserrat', sans-serif;
@@ -212,15 +266,15 @@
     
     .auth-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(201,169,110,0.4);
+      box-shadow: 0 8px 30px color-mix(in srgb, var(--accent-color) 40%, transparent);
     }
     
     .auth-btn:active { transform: scale(0.98); }
     
     .auth-btn.secondary {
-      background: #151515;
-      color: #c9a96e;
-      border: 1px solid #c9a96e;
+      background: var(--bg-tertiary);
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
     }
     
     .error-msg {
@@ -236,16 +290,16 @@
       align-items: center;
       gap: 8px;
       padding: 8px 16px;
-      background: #0f0f0f;
-      border: 1px solid #222;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 2px;
     }
     
     .logout-btn {
       padding: 6px 12px;
       background: transparent;
-      color: #999;
-      border: 1px solid #333;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 2px;
       font-family: 'Montserrat', sans-serif;
       font-size: 9px;
@@ -255,8 +309,8 @@
     }
     
     .logout-btn:hover {
-      border-color: #c9a96e;
-      color: #c9a96e;
+      border-color: var(--accent-color);
+      color: var(--accent-color);
     }
 
     .modal-overlay {
@@ -281,8 +335,8 @@
     }
 
     .modal-box {
-      background: #0f0f0f;
-      border: 1px solid #333;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       padding: 32px;
       max-width: 500px;
@@ -307,8 +361,8 @@
 
     .icon-btn {
       padding: 12px;
-      background: #0a0a0a;
-      border: 2px solid #1a1a1a;
+      background: var(--bg-primary);
+      border: 2px solid var(--border-color);
       border-radius: 4px;
       font-size: 24px;
       cursor: pointer;
@@ -316,21 +370,21 @@
     }
 
     .icon-btn:hover {
-      border-color: #c9a96e;
-      background: #111;
+      border-color: var(--accent-color);
+      background: var(--bg-tertiary);
     }
 
     .icon-btn.selected {
-      border-color: #c9a96e;
-      background: #151515;
+      border-color: var(--accent-color);
+      background: var(--bg-tertiary);
     }
 
     .edit-cat-btn, .delete-cat-btn {
       padding: 4px 8px;
       background: transparent;
-      border: 1px solid #333;
+      border: 1px solid var(--border-color);
       border-radius: 2px;
-      color: #777;
+      color: var(--text-secondary);
       font-size: 16px;
       cursor: pointer;
       transition: all 0.2s;
@@ -338,13 +392,8 @@
     }
 
     .edit-cat-btn:hover {
-      border-color: #c9a96e;
-      color: #c9a96e;
-    }
-
-    .delete-cat-btn {
-      border-color: #553;
-      color: #977;
+      border-color: var(--accent-color);
+      color: var(--accent-color);
     }
 
     .delete-cat-btn:hover {
@@ -355,9 +404,9 @@
     .add-item-btn {
       padding: 8px 16px;
       background: transparent;
-      border: 1px solid #c9a96e;
+      border: 1px solid var(--accent-color);
       border-radius: 2px;
-      color: #c9a96e;
+      color: var(--accent-color);
       font-family: 'Montserrat', sans-serif;
       font-size: 10px;
       letter-spacing: 0.15em;
@@ -369,8 +418,8 @@
     }
 
     .add-item-btn:hover {
-      background: #c9a96e;
-      color: #0a0a0a;
+      background: var(--accent-color);
+      color: var(--bg-primary);
       transform: translateY(-1px);
     }
 
@@ -379,24 +428,24 @@
       align-items: center;
       gap: 4px;
       padding: 4px 10px;
-      border: 1px solid #333;
+      border: 1px solid var(--border-color);
       border-radius: 2px;
       font-family: 'Montserrat', sans-serif;
       font-size: 9px;
       letter-spacing: 0.1em;
       cursor: pointer;
       transition: all 0.2s;
-      background: #0a0a0a;
+      background: var(--bg-primary);
     }
 
     .season-tag.selected {
-      border-color: #c9a96e;
-      background: #c9a96e;
-      color: #0a0a0a;
+      border-color: var(--accent-color);
+      background: var(--accent-color);
+      color: var(--bg-primary);
     }
 
     .season-tag:hover {
-      border-color: #c9a96e;
+      border-color: var(--accent-color);
     }
 
     .preview-image {
@@ -404,7 +453,7 @@
       max-height: 300px;
       object-fit: contain;
       border-radius: 4px;
-      background: #0a0a0a;
+      background: var(--bg-primary);
       margin-bottom: 16px;
     }
 
@@ -417,18 +466,18 @@
 
     .meta-tag {
       padding: 3px 8px;
-      background: #151515;
-      border: 1px solid #222;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
       border-radius: 2px;
       font-family: 'Montserrat', sans-serif;
       font-size: 8px;
       letter-spacing: 0.1em;
-      color: #999;
+      color: var(--text-secondary);
     }
 
     .category-edit-item {
-      background: #0a0a0a;
-      border: 1px solid #222;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       padding: 16px;
       margin-bottom: 12px;
@@ -438,7 +487,7 @@
     }
 
     .category-edit-item:hover {
-      border-color: #333;
+      border-color: var(--accent-color);
     }
 
     .ref-image-grid {
@@ -453,7 +502,7 @@
       aspect-ratio: 1;
       border-radius: 4px;
       overflow: hidden;
-      border: 2px solid #222;
+      border: 2px solid var(--border-color);
       cursor: pointer;
     }
 
@@ -476,6 +525,41 @@
       cursor: pointer;
       font-size: 12px;
     }
+
+    .theme-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .theme-option {
+      padding: 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .theme-option:hover {
+      border-color: var(--accent-color);
+    }
+
+    .theme-option.selected {
+      border-color: var(--accent-color);
+      background: var(--bg-tertiary);
+    }
+
+    .color-input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .color-input-group > div {
+      flex: 1;
+    }
     
     @media (max-width: 768px) {
       .auth-box { padding: 30px 20px; }
@@ -490,7 +574,7 @@
     }
   </style>
 </head>
-<body>
+<body class="theme-dark">
   <div id="root"></div>
 
   <script type="module">
@@ -540,6 +624,13 @@
       { id: "winter", label: "겨울", en: "WINTER", color: "#60a5fa", bg: "#eff6ff", emoji: "❄️" },
     ];
 
+    const THEMES = [
+      { id: 'dark', label: 'Dark', emoji: '🌙' },
+      { id: 'light', label: 'Light', emoji: '☀️' },
+      { id: 'blue', label: 'Blue', emoji: '🌊' },
+      { id: 'forest', label: 'Forest', emoji: '🌲' }
+    ];
+
     let state = {
       user: null,
       authMode: 'login',
@@ -567,11 +658,20 @@
       },
       aiReference: {
         images: [],
-        colors: ''
+        topColor: '',
+        bottomColor: ''
+      },
+      settings: {
+        theme: 'dark'
       }
     };
 
     let unsubscribeFirestore = null;
+
+    // Apply theme
+    function applyTheme(theme) {
+      document.body.className = `theme-${theme}`;
+    }
 
     function render() {
       const root = document.getElementById('root');
@@ -594,19 +694,19 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80" style="margin-bottom: 16px;">
                 <defs>
                   <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#c9a96e"/>
-                    <stop offset="1" stop-color="#a8864a"/>
+                    <stop offset="0" stop-color="var(--accent-color)"/>
+                    <stop offset="1" stop-color="var(--accent-hover)"/>
                   </linearGradient>
                 </defs>
                 <path d="M60 28c-14 0-23 7-23 19v45h46V47c0-12-9-19-23-19z" fill="url(#gradient)"/>
-                <rect x="37" y="47" width="19" height="45" fill="#0a0a0a" opacity="0.15"/>
-                <rect x="64" y="47" width="19" height="45" fill="#0a0a0a" opacity="0.15"/>
-                <path d="M47 28h26c2 0 4 2 4 4s-2 3-4 3H47c-2 0-4-1-4-3s2-4 4-4z" fill="#c9a96e"/>
-                <circle cx="47" cy="42" r="2" fill="#c9a96e"/>
-                <circle cx="60" cy="42" r="2" fill="#c9a96e"/>
-                <circle cx="73" cy="42" r="2" fill="#c9a96e"/>
+                <rect x="37" y="47" width="19" height="45" fill="var(--bg-primary)" opacity="0.15"/>
+                <rect x="64" y="47" width="19" height="45" fill="var(--bg-primary)" opacity="0.15"/>
+                <path d="M47 28h26c2 0 4 2 4 4s-2 3-4 3H47c-2 0-4-1-4-3s2-4 4-4z" fill="var(--accent-color)"/>
+                <circle cx="47" cy="42" r="2" fill="var(--accent-color)"/>
+                <circle cx="60" cy="42" r="2" fill="var(--accent-color)"/>
+                <circle cx="73" cy="42" r="2" fill="var(--accent-color)"/>
               </svg>
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.4em; color: #c9a96e; margin-bottom: 4px;">MY PERSONAL</div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.4em; color: var(--accent-color); margin-bottom: 4px;">MY PERSONAL</div>
               <div style="font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300;">Wardrobe</div>
             </div>
             
@@ -638,7 +738,7 @@
             <div style="text-align: center; margin-top: 20px;">
               <button 
                 id="toggleAuthMode" 
-                style="background: none; border: none; color: #999; font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.1em; cursor: pointer; text-decoration: underline;"
+                style="background: none; border: none; color: var(--text-secondary); font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.1em; cursor: pointer; text-decoration: underline;"
               >
                 ${isLogin ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
               </button>
@@ -658,45 +758,52 @@
 
       return `
         <div class="app-container">
-          <header style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222; flex-shrink: 0;">
+          <header style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
             <div>
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.4em; color: #c9a96e; margin-bottom: 2px;">MY PERSONAL</div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.4em; color: var(--accent-color); margin-bottom: 2px;">MY PERSONAL</div>
               <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300;">Wardrobe</div>
             </div>
             <div class="user-badge">
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: #999;">${state.user.email}</div>
-              <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: var(--text-secondary);">${state.user.email}</div>
             </div>
           </header>
 
-          <nav style="display: flex; gap: 0; border-bottom: 1px solid #1a1a1a; background: #0a0a0a; flex-shrink: 0;">
+          <nav style="display: flex; gap: 0; border-bottom: 1px solid var(--border-color); background: var(--bg-primary); flex-shrink: 0;">
             <button 
               class="tab-btn" 
               data-tab="wardrobe"
-              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'wardrobe' ? '600' : '400'}; color: ${state.tab === 'wardrobe' ? '#c9a96e' : '#555'}; border-bottom: ${state.tab === 'wardrobe' ? '2px solid #c9a96e' : '2px solid transparent'};"
+              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'wardrobe' ? '600' : '400'}; color: ${state.tab === 'wardrobe' ? 'var(--accent-color)' : 'var(--text-tertiary)'}; border-bottom: ${state.tab === 'wardrobe' ? '2px solid var(--accent-color)' : '2px solid transparent'};"
             >
               CLOSET
             </button>
             <button 
               class="tab-btn" 
               data-tab="outfit"
-              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'outfit' ? '600' : '400'}; color: ${state.tab === 'outfit' ? '#c9a96e' : '#555'}; border-bottom: ${state.tab === 'outfit' ? '2px solid #c9a96e' : '2px solid transparent'};"
+              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'outfit' ? '600' : '400'}; color: ${state.tab === 'outfit' ? 'var(--accent-color)' : 'var(--text-tertiary)'}; border-bottom: ${state.tab === 'outfit' ? '2px solid var(--accent-color)' : '2px solid transparent'};"
             >
               OUTFIT AI
             </button>
             <button 
               class="tab-btn" 
               data-tab="categories"
-              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'categories' ? '600' : '400'}; color: ${state.tab === 'categories' ? '#c9a96e' : '#555'}; border-bottom: ${state.tab === 'categories' ? '2px solid #c9a96e' : '2px solid transparent'};"
+              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'categories' ? '600' : '400'}; color: ${state.tab === 'categories' ? 'var(--accent-color)' : 'var(--text-tertiary)'}; border-bottom: ${state.tab === 'categories' ? '2px solid var(--accent-color)' : '2px solid transparent'};"
             >
               CATEGORIES
+            </button>
+            <button 
+              class="tab-btn" 
+              data-tab="settings"
+              style="flex: 1; padding: 18px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: ${state.tab === 'settings' ? '600' : '400'}; color: ${state.tab === 'settings' ? 'var(--accent-color)' : 'var(--text-tertiary)'}; border-bottom: ${state.tab === 'settings' ? '2px solid var(--accent-color)' : '2px solid transparent'};"
+            >
+              SETTINGS
             </button>
           </nav>
 
           <div class="scrollable">
             ${state.tab === 'wardrobe' ? renderWardrobe(currentItems, totalItems) : 
               state.tab === 'outfit' ? renderOutfit(season, currentOutfits, totalItems) :
-              renderCategories()}
+              state.tab === 'categories' ? renderCategories() :
+              renderSettings()}
           </div>
 
           ${state.modal ? renderModal() : ''}
@@ -712,7 +819,7 @@
               Your Collection
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; letter-spacing: 0.15em;">
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.15em;">
                 ${totalItems} ITEMS
               </div>
               <button class="add-item-btn" id="addItemBtn">
@@ -730,10 +837,10 @@
                 style="
                   flex-shrink: 0;
                   padding: 12px 20px;
-                  background: ${state.activeCategory === cat.id ? '#151515' : '#0f0f0f'};
-                  border: 1px solid ${state.activeCategory === cat.id ? '#c9a96e' : '#1a1a1a'};
+                  background: ${state.activeCategory === cat.id ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'};
+                  border: 1px solid ${state.activeCategory === cat.id ? 'var(--accent-color)' : 'var(--border-color)'};
                   border-radius: 2px;
-                  color: ${state.activeCategory === cat.id ? '#c9a96e' : '#555'};
+                  color: ${state.activeCategory === cat.id ? 'var(--accent-color)' : 'var(--text-tertiary)'};
                   display: flex;
                   align-items: center;
                   gap: 8px;
@@ -747,8 +854,8 @@
                   <span style="
                     font-family: 'Montserrat', sans-serif;
                     font-size: 8px;
-                    background: ${state.activeCategory === cat.id ? '#c9a96e' : '#222'};
-                    color: ${state.activeCategory === cat.id ? '#0a0a0a' : '#666'};
+                    background: ${state.activeCategory === cat.id ? 'var(--accent-color)' : 'var(--border-color)'};
+                    color: ${state.activeCategory === cat.id ? 'var(--bg-primary)' : 'var(--text-tertiary)'};
                     padding: 2px 6px;
                     border-radius: 10px;
                     margin-left: 4px;
@@ -762,11 +869,11 @@
 
           <main>
             ${currentItems.length === 0 ? `
-              <div style="text-align: center; padding: 60px 0; color: #333;">
+              <div style="text-align: center; padding: 60px 0; color: var(--text-tertiary);">
                 <div style="font-family: 'Cormorant Garamond', serif; font-size: 20px; margin-bottom: 8px;">
                   Empty Category
                 </div>
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #444; margin-bottom: 16px;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; margin-bottom: 16px;">
                   ADD YOUR FIRST ${state.activeCategory} ITEM
                 </div>
                 <button class="add-item-btn" onclick="document.getElementById('addItemBtn').click()" style="margin: 0 auto;">
@@ -781,7 +888,7 @@
                     <img 
                       src="${item.src}" 
                       alt="${item.name}" 
-                      style="width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; background: #111;"
+                      style="width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; background: var(--bg-tertiary);"
                     />
                     <button 
                       class="delete-btn" 
@@ -800,12 +907,12 @@
                         font-size: 12px;
                       "
                     >×</button>
-                    <div style="padding: 8px; background: #111;">
+                    <div style="padding: 8px; background: var(--bg-tertiary);">
                       <div style="
                         font-family: 'Montserrat', sans-serif;
                         font-size: 9px;
                         letter-spacing: 0.1em;
-                        color: #777;
+                        color: var(--text-secondary);
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
@@ -844,11 +951,11 @@
                   flex: 1;
                   min-width: 140px;
                   padding: 20px 16px;
-                  background: ${state.activeSeason === s.id ? '#151515' : '#0f0f0f'};
-                  border: 1px solid ${state.activeSeason === s.id ? s.color : '#1a1a1a'};
+                  background: ${state.activeSeason === s.id ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'};
+                  border: 1px solid ${state.activeSeason === s.id ? s.color : 'var(--border-color)'};
                   border-radius: 4px;
                   text-align: center;
-                  color: ${state.activeSeason === s.id ? s.color : '#444'};
+                  color: ${state.activeSeason === s.id ? s.color : 'var(--text-tertiary)'};
                 "
               >
                 <div style="font-size: 24px; margin-bottom: 6px;">${s.emoji}</div>
@@ -860,7 +967,6 @@
                   font-size: 9px;
                   letter-spacing: 0.3em;
                   margin-top: 2px;
-                  color: ${state.activeSeason === s.id ? s.color : '#333'};
                 ">
                   ${s.en}
                 </div>
@@ -875,12 +981,13 @@
               ${state.loading || totalItems < 2 ? 'disabled' : ''}
               style="
                 padding: 16px 48px;
-                background: ${state.loading ? '#1a1a1a' : 'linear-gradient(135deg, #c9a96e, #a8864a)'};
-                color: ${state.loading ? '#555' : '#0a0a0a'};
+                background: ${state.loading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, var(--accent-color), var(--accent-hover))'};
+                color: ${state.loading ? 'var(--text-tertiary)' : 'var(--bg-primary)'};
                 border-radius: 2px;
                 font-family: 'Montserrat', sans-serif;
                 font-size: 11px;
                 font-weight: 600;
+                letter-spacing: 0.15em;
               "
             >
               ${state.loading ? `<span class="pulse">✦ AI 코디 생성 중...</span>` : `✦ ${season.label} 코디 AI 추천받기`}
@@ -897,20 +1004,21 @@
               <div style="
                 font-family: 'Montserrat', sans-serif;
                 font-size: 10px;
-                color: #555;
+                color: var(--text-tertiary);
                 margin-top: 10px;
                 letter-spacing: 0.15em;
               ">
                 CLOSET에 아이템을 2개 이상 추가해주세요
               </div>
             ` : ''}
-            ${(state.aiReference.images.length > 0 || state.aiReference.colors) ? `
+            ${(state.aiReference.images.length > 0 || state.aiReference.topColor || state.aiReference.bottomColor) ? `
               <div style="margin-top: 16px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.2em; color: #c9a96e; margin-bottom: 8px;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.2em; color: var(--accent-color); margin-bottom: 8px;">
                   참고 자료 설정됨
                 </div>
-                ${state.aiReference.images.length > 0 ? `<div style="color: #999; font-size: 11px;">참고 이미지 ${state.aiReference.images.length}개</div>` : ''}
-                ${state.aiReference.colors ? `<div style="color: #999; font-size: 11px;">색상 조합: ${state.aiReference.colors}</div>` : ''}
+                ${state.aiReference.images.length > 0 ? `<div style="color: var(--text-secondary); font-size: 11px;">참고 이미지 ${state.aiReference.images.length}개</div>` : ''}
+                ${state.aiReference.topColor ? `<div style="color: var(--text-secondary); font-size: 11px;">상의 색상: ${state.aiReference.topColor}</div>` : ''}
+                ${state.aiReference.bottomColor ? `<div style="color: var(--text-secondary); font-size: 11px;">하의 색상: ${state.aiReference.bottomColor}</div>` : ''}
               </div>
             ` : ''}
           </div>
@@ -919,7 +1027,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
               ${currentOutfits.map((outfit, i) => `
                 <div class="outfit-card" style="
-                  background: #0f0f0f;
+                  background: var(--bg-secondary);
                   border: 1px solid ${season.color}22;
                   border-radius: 4px;
                   overflow: hidden;
@@ -968,7 +1076,7 @@
                     <p style="
                       font-family: 'Georgia', serif;
                       font-size: 13px;
-                      color: #888;
+                      color: var(--text-secondary);
                       line-height: 1.7;
                       margin-bottom: 20px;
                     ">
@@ -980,7 +1088,7 @@
                         font-family: 'Montserrat', sans-serif;
                         font-size: 9px;
                         letter-spacing: 0.25em;
-                        color: #555;
+                        color: var(--text-tertiary);
                         margin-bottom: 10px;
                       ">
                         ITEMS
@@ -997,10 +1105,10 @@
                               display: flex;
                               align-items: center;
                               gap: 6px;
-                              background: #151515;
+                              background: var(--bg-tertiary);
                               border-radius: 2px;
                               padding: 6px 10px;
-                              border: 1px solid #1e1e1e;
+                              border: 1px solid var(--border-color);
                             ">
                               ${found ? `<img src="${found.src}" alt="" style="width: 28px; height: 28px; object-fit: cover; border-radius: 2px;" />` : ''}
                               <div>
@@ -1015,7 +1123,7 @@
                                 <div style="
                                   font-family: 'Montserrat', sans-serif;
                                   font-size: 10px;
-                                  color: #ccc;
+                                  color: var(--text-primary);
                                 ">
                                   ${name.trim()}
                                 </div>
@@ -1045,7 +1153,7 @@
                         <div style="
                           font-family: 'Georgia', serif;
                           font-size: 12px;
-                          color: #999;
+                          color: var(--text-secondary);
                           line-height: 1.6;
                         ">
                           ${outfit.tip}
@@ -1057,13 +1165,12 @@
               `).join('')}
             </div>
           ` : !state.loading ? `
-            <div style="text-align: center; padding: 80px 0; color: #2a2a2a;">
+            <div style="text-align: center; padding: 80px 0; color: var(--text-tertiary);">
               <div style="font-size: 48px; margin-bottom: 16px;">${season.emoji}</div>
               <div style="
                 font-family: 'Cormorant Garamond', serif;
                 font-size: 24px;
                 font-weight: 300;
-                color: #333;
                 margin-bottom: 8px;
               ">
                 No Outfits Yet
@@ -1072,7 +1179,6 @@
                 font-family: 'Montserrat', sans-serif;
                 font-size: 10px;
                 letter-spacing: 0.25em;
-                color: #333;
               ">
                 위 버튼을 눌러 ${season.label} 코디를 추천받으세요
               </div>
@@ -1095,7 +1201,7 @@
             </button>
           </div>
 
-          <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777; margin-bottom: 24px;">
+          <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: var(--text-secondary); margin-bottom: 24px;">
             카테고리를 편집하면 옷장에 자동으로 반영됩니다
           </div>
 
@@ -1104,10 +1210,10 @@
               <div class="category-edit-item">
                 <div style="font-size: 32px; flex-shrink: 0;">${cat.icon}</div>
                 <div style="flex: 1;">
-                  <div style="font-family: 'Montserrat', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #f5f0e8; margin-bottom: 4px;">
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: var(--text-primary); margin-bottom: 4px;">
                     ${cat.label}
                   </div>
-                  <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: #666;">
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: var(--text-tertiary);">
                     ${(state.wardrobe[cat.id] || []).length} items
                   </div>
                 </div>
@@ -1115,6 +1221,53 @@
                 ${state.categories.length > 1 ? `<button class="delete-cat-btn" data-delete-cat="${cat.id}">🗑️</button>` : ''}
               </div>
             `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSettings() {
+      return `
+        <div style="padding: 24px; padding-bottom: 60px;">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; margin-bottom: 24px;">
+            Settings
+          </div>
+
+          <div style="margin-bottom: 32px;">
+            <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 16px;">
+              THEME
+            </label>
+            <div class="theme-selector">
+              ${THEMES.map(theme => `
+                <button 
+                  class="theme-option ${state.settings.theme === theme.id ? 'selected' : ''}"
+                  data-theme="${theme.id}"
+                  style="color: var(--text-primary);"
+                >
+                  <div style="font-size: 32px; margin-bottom: 8px;">${theme.emoji}</div>
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.1em;">
+                    ${theme.label}
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 32px;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); margin-bottom: 16px;">
+              ACCOUNT
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; padding: 16px;">
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: var(--text-primary); margin-bottom: 4px;">
+                ${state.user.email}
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: var(--text-tertiary); margin-bottom: 16px;">
+                Logged in
+              </div>
+              <button class="auth-btn" id="logoutBtnSettings" style="width: auto; padding: 10px 24px; margin: 0;">
+                LOGOUT
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -1132,13 +1285,13 @@
                 <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
                   ${isEdit ? 'Edit Category' : 'New Category'}
                 </div>
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: var(--text-secondary);">
                   ${isEdit ? 'MODIFY YOUR CATEGORY' : 'CREATE A NEW CATEGORY'}
                 </div>
               </div>
 
               <div style="margin-bottom: 24px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   CATEGORY NAME
                 </label>
                 <input 
@@ -1152,7 +1305,7 @@
               </div>
 
               <div style="margin-bottom: 24px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 12px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 12px;">
                   SELECT ICON
                 </label>
                 <div class="icon-grid">
@@ -1194,7 +1347,7 @@
                 <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
                   Add New Item
                 </div>
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: var(--text-secondary);">
                   ADD TO ${state.activeCategory}
                 </div>
               </div>
@@ -1206,17 +1359,17 @@
                   class="upload-zone" 
                   id="itemUploadZone"
                   style="
-                    border: 2px dashed #1a1a1a;
+                    border: 2px dashed var(--border-color);
                     border-radius: 4px;
                     padding: 40px;
                     text-align: center;
-                    background: #0a0a0a;
+                    background: var(--bg-primary);
                     margin-bottom: 16px;
                     cursor: pointer;
                   "
                 >
                   <div style="font-size: 28px; margin-bottom: 10px;">📷</div>
-                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.3em; color: #555;">
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.3em; color: var(--text-tertiary);">
                     CLICK TO SELECT IMAGE
                   </div>
                   <input 
@@ -1229,7 +1382,7 @@
               `}
 
               <div style="margin-bottom: 16px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   ITEM NAME
                 </label>
                 <input 
@@ -1243,7 +1396,7 @@
               </div>
 
               <div style="margin-bottom: 16px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   SEASONS (복수 선택 가능)
                 </label>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -1259,7 +1412,7 @@
               </div>
 
               <div style="margin-bottom: 16px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   COLOR
                 </label>
                 <input 
@@ -1273,7 +1426,7 @@
               </div>
 
               <div style="margin-bottom: 24px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   BRAND
                 </label>
                 <input 
@@ -1314,30 +1467,30 @@
                 <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; margin-bottom: 8px;">
                   AI 참고 자료
                 </div>
-                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #777;">
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: var(--text-secondary);">
                   코디 추천 시 참고할 이미지와 색상을 설정하세요
                 </div>
               </div>
 
               <div style="margin-bottom: 24px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 12px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 12px;">
                   참고 코디 이미지
                 </label>
                 <div 
                   class="upload-zone" 
                   id="refUploadZone"
                   style="
-                    border: 2px dashed #1a1a1a;
+                    border: 2px dashed var(--border-color);
                     border-radius: 4px;
                     padding: 30px;
                     text-align: center;
-                    background: #0a0a0a;
+                    background: var(--bg-primary);
                     margin-bottom: 12px;
                     cursor: pointer;
                   "
                 >
                   <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
-                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: #555;">
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.2em; color: var(--text-tertiary);">
                     CLICK TO ADD IMAGES
                   </div>
                   <input 
@@ -1360,18 +1513,38 @@
                 ` : ''}
               </div>
 
-              <div style="margin-bottom: 24px;">
-                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: #999; display: block; margin-bottom: 8px;">
+              <div style="margin-bottom: 16px;">
+                <label style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.15em; color: var(--text-secondary); display: block; margin-bottom: 8px;">
                   색상 조합
                 </label>
-                <input 
-                  type="text" 
-                  id="refColorInput" 
-                  class="auth-input"
-                  value="${state.aiReference.colors}"
-                  placeholder="e.g., Black & White, Navy & Beige"
-                  style="margin-bottom: 0;"
-                />
+                <div class="color-input-group">
+                  <div>
+                    <label style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: var(--text-tertiary); display: block; margin-bottom: 4px;">
+                      상의 색상
+                    </label>
+                    <input 
+                      type="text" 
+                      id="refTopColorInput" 
+                      class="auth-input"
+                      value="${state.aiReference.topColor}"
+                      placeholder="e.g., Black, White"
+                      style="margin-bottom: 0;"
+                    />
+                  </div>
+                  <div>
+                    <label style="font-family: 'Montserrat', sans-serif; font-size: 9px; color: var(--text-tertiary); display: block; margin-bottom: 4px;">
+                      하의 색상
+                    </label>
+                    <input 
+                      type="text" 
+                      id="refBottomColorInput" 
+                      class="auth-input"
+                      value="${state.aiReference.bottomColor}"
+                      placeholder="e.g., Navy, Beige"
+                      style="margin-bottom: 0;"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style="display: flex; gap: 12px;">
@@ -1524,6 +1697,7 @@
       const addItemBtn = document.getElementById('addItemBtn');
       if (addItemBtn) {
         addItemBtn.addEventListener('click', () => {
+          // 완전히 새로운 객체로 초기화
           state.newItem = {
             image: null,
             name: '',
@@ -1563,10 +1737,21 @@
         aiBtn.addEventListener('click', getAIOutfit);
       }
 
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
+      const logoutBtnSettings = document.getElementById('logoutBtnSettings');
+      if (logoutBtnSettings) {
+        logoutBtnSettings.addEventListener('click', handleLogout);
       }
+
+      // Theme selector
+      document.querySelectorAll('.theme-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const theme = btn.dataset.theme;
+          state.settings.theme = theme;
+          applyTheme(theme);
+          saveToFirestore();
+          render();
+        });
+      });
 
       if (state.modal) {
         attachModalListeners();
@@ -1679,7 +1864,8 @@
       } else if (state.modal === 'aiReference') {
         const uploadZone = document.getElementById('refUploadZone');
         const imageInput = document.getElementById('refImageInput');
-        const colorInput = document.getElementById('refColorInput');
+        const topColorInput = document.getElementById('refTopColorInput');
+        const bottomColorInput = document.getElementById('refBottomColorInput');
         const saveRefBtn = document.getElementById('saveRefBtn');
 
         if (uploadZone && imageInput) {
@@ -1697,14 +1883,19 @@
                 reader.readAsDataURL(file);
               }
             });
-            // Reset input
             e.target.value = '';
           });
         }
 
-        if (colorInput) {
-          colorInput.addEventListener('input', e => {
-            state.aiReference.colors = e.target.value;
+        if (topColorInput) {
+          topColorInput.addEventListener('input', e => {
+            state.aiReference.topColor = e.target.value;
+          });
+        }
+
+        if (bottomColorInput) {
+          bottomColorInput.addEventListener('input', e => {
+            state.aiReference.bottomColor = e.target.value;
           });
         }
 
@@ -1750,7 +1941,6 @@
             state.activeCategory = newId;
           }
           
-          // Update all items in the category
           if (state.wardrobe[newId]) {
             state.wardrobe[newId].forEach(item => {
               item.category = newId;
@@ -1785,21 +1975,27 @@
 
       const name = state.newItem.name.trim() || 'Untitled';
 
-      const newItem = {
+      // 새로운 아이템 객체 생성
+      const newItemData = {
         id: Date.now() + Math.random(),
         src: state.newItem.image,
         name: name,
         category: state.activeCategory,
-        seasons: state.newItem.seasons,
+        seasons: [...state.newItem.seasons],
         color: state.newItem.color.trim(),
         brand: state.newItem.brand.trim()
       };
 
+      // wardrobe에 추가
+      if (!state.wardrobe[state.activeCategory]) {
+        state.wardrobe[state.activeCategory] = [];
+      }
       state.wardrobe[state.activeCategory] = [
-        ...(state.wardrobe[state.activeCategory] || []),
-        newItem
+        ...state.wardrobe[state.activeCategory],
+        newItemData
       ];
 
+      // 모달 닫고 newItem 완전 초기화
       state.modal = null;
       state.newItem = {
         image: null,
@@ -1808,11 +2004,16 @@
         color: '',
         brand: ''
       };
-      saveToFirestore();
-      render();
+      
+      // Firestore 저장 후 렌더링
+      saveToFirestore().then(() => {
+        render();
+      });
     }
 
     function removeItem(itemId) {
+      if (!state.wardrobe[state.activeCategory]) return;
+      
       state.wardrobe[state.activeCategory] = state.wardrobe[state.activeCategory].filter(
         item => item.id != itemId
       );
@@ -1837,13 +2038,17 @@
         const seasonInfo = SEASONS.find(s => s.id === state.activeSeason);
         
         let referenceText = '';
-        if (state.aiReference.images.length > 0 || state.aiReference.colors) {
+        if (state.aiReference.images.length > 0 || state.aiReference.topColor || state.aiReference.bottomColor) {
           referenceText = '\n\n참고 자료:';
           if (state.aiReference.images.length > 0) {
             referenceText += `\n- ${state.aiReference.images.length}개의 참고 코디 이미지가 제공되었습니다. 이 이미지들의 스타일과 조합을 참고하세요.`;
           }
-          if (state.aiReference.colors) {
-            referenceText += `\n- 선호 색상 조합: ${state.aiReference.colors}`;
+          if (state.aiReference.topColor && state.aiReference.bottomColor) {
+            referenceText += `\n- 선호 색상 조합: 상의 ${state.aiReference.topColor}, 하의 ${state.aiReference.bottomColor}`;
+          } else if (state.aiReference.topColor) {
+            referenceText += `\n- 상의 색상: ${state.aiReference.topColor}`;
+          } else if (state.aiReference.bottomColor) {
+            referenceText += `\n- 하의 색상: ${state.aiReference.bottomColor}`;
           }
         }
 
@@ -1912,6 +2117,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
           wardrobe: state.wardrobe,
           outfits: state.outfits,
           aiReference: state.aiReference,
+          settings: state.settings,
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } catch (error) {
@@ -1934,7 +2140,10 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
           state.categories = data.categories || [...DEFAULT_CATEGORIES];
           state.wardrobe = data.wardrobe || {};
           state.outfits = data.outfits || {};
-          state.aiReference = data.aiReference || { images: [], colors: '' };
+          state.aiReference = data.aiReference || { images: [], topColor: '', bottomColor: '' };
+          state.settings = data.settings || { theme: 'dark' };
+          
+          applyTheme(state.settings.theme);
           
           if (!state.categories.find(c => c.id === state.activeCategory)) {
             state.activeCategory = state.categories[0]?.id || 'TOPS';
@@ -1958,12 +2167,16 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
         state.categories = [...DEFAULT_CATEGORIES];
         state.wardrobe = {};
         state.outfits = {};
-        state.aiReference = { images: [], colors: '' };
+        state.aiReference = { images: [], topColor: '', bottomColor: '' };
+        state.settings = { theme: 'dark' };
+        applyTheme('dark');
       }
       
       render();
     });
 
+    // Apply initial theme
+    applyTheme(state.settings.theme);
     render();
   </script>
 </body>
