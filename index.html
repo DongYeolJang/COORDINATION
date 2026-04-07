@@ -581,6 +581,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyAh2GUyt2NDSo-dlbltr45lHzF-RPyGUBQ",
@@ -595,6 +596,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
     const googleProvider = new GoogleAuthProvider();
 
     const DEFAULT_CATEGORIES = [
@@ -668,6 +670,33 @@
 
     let unsubscribeFirestore = null;
     let isSavingItem = false; // 아이템 저장 중 플래그
+
+    // 이미지를 Firebase Storage에 업로드
+    async function uploadImageToStorage(base64Image, path) {
+      try {
+        const storageRef = ref(storage, path);
+        await uploadString(storageRef, base64Image, 'data_url');
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+      } catch (error) {
+        console.error('Image upload error:', error);
+        throw error;
+      }
+    }
+
+    // Storage에서 이미지 삭제
+    async function deleteImageFromStorage(imageUrl) {
+      try {
+        // Firebase Storage URL에서 path 추출
+        if (!imageUrl.includes('firebasestorage.googleapis.com')) {
+          return; // Firebase Storage URL이 아니면 무시
+        }
+        const storageRef = ref(storage, imageUrl);
+        await deleteObject(storageRef);
+      } catch (error) {
+        console.error('Image delete error:', error);
+      }
+    }
 
     // Apply theme
     function applyTheme(theme) {
@@ -1908,8 +1937,13 @@
 
         if (saveRefBtn) {
           saveRefBtn.addEventListener('click', () => {
+            // AI 참고 자료는 localStorage에 저장 (Firestore 용량 절약)
+            try {
+              localStorage.setItem('aiReference', JSON.stringify(state.aiReference));
+            } catch (error) {
+              console.error('LocalStorage error:', error);
+            }
             state.modal = null;
-            saveToFirestore();
             render();
           });
         }
@@ -1975,54 +2009,58 @@
       isSavingItem = true;
       render();
 
-      const name = state.newItem.name.trim() || 'Untitled';
-
-      // 새 아이템 데이터 복사본 생성
-      const newItemData = {
-        id: Date.now() + Math.random(),
-        src: state.newItem.image,
-        name: name,
-        category: state.activeCategory,
-        seasons: [...state.newItem.seasons],
-        color: state.newItem.color.trim(),
-        brand: state.newItem.brand.trim()
-      };
-
-      // State 업데이트 (로컬 먼저)
-      if (!state.wardrobe[state.activeCategory]) {
-        state.wardrobe[state.activeCategory] = [];
-      }
-      
-      // 새 배열 생성하여 불변성 유지
-      const updatedWardrobe = {
-        ...state.wardrobe,
-        [state.activeCategory]: [...state.wardrobe[state.activeCategory], newItemData]
-      };
-
-      state.wardrobe = updatedWardrobe;
-
-      // 모달 닫고 newItem 초기화
-      state.modal = null;
-      state.newItem = {
-        image: null,
-        name: '',
-        seasons: [],
-        color: '',
-        brand: ''
-      };
-
-      // 즉시 렌더링하여 사용자에게 표시
-      isSavingItem = false;
-      render();
-
-      // 백그라운드에서 Firestore 저장
       try {
+        const name = state.newItem.name.trim() || 'Untitled';
+        const itemId = Date.now() + Math.random();
+        
+        // 이미지를 Firebase Storage에 업로드
+        const imagePath = `wardrobe/${state.user.uid}/${itemId}.jpg`;
+        const imageUrl = await uploadImageToStorage(state.newItem.image, imagePath);
+
+        // 새 아이템 데이터 (이미지 URL만 저장)
+        const newItemData = {
+          id: itemId,
+          src: imageUrl,
+          name: name,
+          category: state.activeCategory,
+          seasons: [...state.newItem.seasons],
+          color: state.newItem.color.trim(),
+          brand: state.newItem.brand.trim()
+        };
+
+        // State 업데이트 (로컬 먼저)
+        if (!state.wardrobe[state.activeCategory]) {
+          state.wardrobe[state.activeCategory] = [];
+        }
+        
+        // 새 배열 생성하여 불변성 유지
+        const updatedWardrobe = {
+          ...state.wardrobe,
+          [state.activeCategory]: [...state.wardrobe[state.activeCategory], newItemData]
+        };
+
+        state.wardrobe = updatedWardrobe;
+
+        // 모달 닫고 newItem 초기화
+        state.modal = null;
+        state.newItem = {
+          image: null,
+          name: '',
+          seasons: [],
+          color: '',
+          brand: ''
+        };
+
+        // 즉시 렌더링하여 사용자에게 표시
+        isSavingItem = false;
+        render();
+
+        // 백그라운드에서 Firestore 저장
         const userDoc = doc(db, 'users', state.user.uid);
         await setDoc(userDoc, {
           wardrobe: updatedWardrobe,
           categories: state.categories,
           outfits: state.outfits,
-          aiReference: state.aiReference,
           settings: state.settings,
           updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -2031,22 +2069,31 @@
       } catch (error) {
         console.error('Save error:', error);
         alert(`저장 중 오류가 발생했습니다: ${error.message}`);
-        // 저장 실패 시 해당 아이템 제거
-        state.wardrobe[state.activeCategory] = state.wardrobe[state.activeCategory].filter(
-          item => item.id !== newItemData.id
-        );
+        isSavingItem = false;
         render();
       }
     }
 
-    function removeItem(itemId) {
+    async function removeItem(itemId) {
       if (!state.wardrobe[state.activeCategory]) return;
       
+      // 삭제할 아이템 찾기
+      const itemToDelete = state.wardrobe[state.activeCategory].find(item => item.id == itemId);
+      
+      // State에서 제거
       state.wardrobe[state.activeCategory] = state.wardrobe[state.activeCategory].filter(
         item => item.id != itemId
       );
-      saveToFirestore();
+      
       render();
+      
+      // Storage에서 이미지 삭제
+      if (itemToDelete && itemToDelete.src) {
+        await deleteImageFromStorage(itemToDelete.src);
+      }
+      
+      // Firestore 업데이트
+      saveToFirestore();
     }
 
     async function getAIOutfit() {
@@ -2140,11 +2187,11 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
       try {
         state.syncing = true;
         const userDoc = doc(db, 'users', state.user.uid);
+        // AI 참고 이미지는 제외 (용량 절약)
         await setDoc(userDoc, {
           categories: state.categories,
           wardrobe: state.wardrobe,
           outfits: state.outfits,
-          aiReference: state.aiReference,
           settings: state.settings,
           updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -2178,6 +2225,7 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
             state.categories = data.categories || [...DEFAULT_CATEGORIES];
             state.wardrobe = data.wardrobe || {};
             state.outfits = data.outfits || {};
+            // AI 참고 이미지는 Storage URL로 저장되므로 그대로 사용
             state.aiReference = data.aiReference || { images: [], topColor: '', bottomColor: '' };
             state.settings = data.settings || { theme: 'dark' };
             
@@ -2200,6 +2248,16 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
       state.user = user;
       
       if (user) {
+        // localStorage에서 AI 참고 자료 로드
+        try {
+          const savedAiReference = localStorage.getItem('aiReference');
+          if (savedAiReference) {
+            state.aiReference = JSON.parse(savedAiReference);
+          }
+        } catch (error) {
+          console.error('LocalStorage load error:', error);
+        }
+
         // 초기 데이터 로드
         try {
           const userDoc = doc(db, 'users', user.uid);
@@ -2210,7 +2268,6 @@ ${seasonInfo.label} 시즌의 날씨와 분위기에 맞게 최대 3가지 코�
             state.categories = data.categories || [...DEFAULT_CATEGORIES];
             state.wardrobe = data.wardrobe || {};
             state.outfits = data.outfits || {};
-            state.aiReference = data.aiReference || { images: [], topColor: '', bottomColor: '' };
             state.settings = data.settings || { theme: 'dark' };
             
             applyTheme(state.settings.theme);
